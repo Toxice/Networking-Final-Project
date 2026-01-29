@@ -2,10 +2,13 @@
 
 ## Current Information:
 ## DHCP:
-### 1. we have a UDP socket listening on port 67.
-### 2. we need to implement the DHCP requests and responses by the RFC, preferably with a new class made for that
+### 1. DHCP classes for client and server
+### 2. we need to implement the query functions of the offer, request and ack
 
 ## DNS:
+### 1. currently nothing
+
+## FTP
 ### 1. currently nothing
 
 
