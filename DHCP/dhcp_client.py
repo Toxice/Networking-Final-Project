@@ -15,31 +15,17 @@ OUT_ADDRESS = "255.255.255.255"
 IN_PORT = 67
 OUT_PORT = 68
 
-def serve(host:str):
+def serve():
     """
-    sets up the socket for listening
+    sets up the socket for sending
     """
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP socket
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # broadcast
-    sock.bind((IN_ADDRESS, IN_PORT))
-    print(f"[DHCP] Listening on {IN_ADDRESS} on Port {IN_PORT}...")
-    while True:
-        data, address = sock.recvfrom(1024)
-        print("[DHCP] received a request for IP allocation")
-
-        response = build_dhcp_data()
-
-        dest = ("255.255.255.255", OUT_PORT)
-        sock.sendto(response, dest)
+    print(f"[Client] Sending Data Across Port {OUT_PORT}...")
+    sock.sendto()
 
 def main():
-    ap = argparse.ArgumentParser(description="DHCP Server")
-    ap.add_argument("--host", default="127.0.0.1")
-    args = ap.parse_args()
-    serve(args.host)
-
-def build_dhcp_data():
-    return b""
+    serve()
 
 if __name__ == "__main__":
     main()
