@@ -6,6 +6,8 @@ from ZoneDatabase import ZoneDatabase
 import struct
 
 
+
+#building response
 class DNSResponseBuilder:
     def __init__(self,request_data):
         self.request_data = request_data

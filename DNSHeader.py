@@ -1,4 +1,6 @@
+#header
 class DNSHeader:
+
     def __init__(self,raw_data):
         self.raw_data = raw_data
         #parsing fixed 12-byte header

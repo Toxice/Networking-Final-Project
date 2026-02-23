@@ -1,6 +1,7 @@
 from pkgutil import resolve_name
 
 
+#kind of מאגר שלנו
 class ZoneDatabase:
     def __init__(self, name:str):
         self.zone_name = name.lower().rstrip(".")
