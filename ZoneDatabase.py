@@ -13,22 +13,18 @@ class ZoneDatabase:
             "pornhub." + self.zone_name : "66.254.114.41"
         }
         #SOA - start of authority
-        mname = "ns1." + self.zone_name  #primary nameserver
-        rname = "bossoftheserver" + "." + self.zone_name #responsible email
-        serial = 13121312
-        refresh = 3600
-        retry = 666
-        expire = 86400
-        minimum = 300
         self.soa = {
-            mname,
-            rname,
-            serial,
-            refresh,
-            retry,
-            expire,
-            minimum
+            "mname": "ns1." + self.zone_name, #primary nameserver
+            "rname": "hostmaster." + self.zone_name, #responsible email
+            "serial": 13121312,
+            "refresh": 3600,
+            "retry": 600,
+            "expire": 86400,
+            "minimum": 300
         }
+
+    def get_soa(self):
+        return self.soa
 
     #checking whether name is in records:
     def is_in_zone(self, name):
@@ -39,6 +35,8 @@ class ZoneDatabase:
             return True
         else:
             return False
+    def get_name(self):
+        return self.zone_name
 
     def lookup(self, domain_name):
         return self.records.get(domain_name.lower().rstrip("."))

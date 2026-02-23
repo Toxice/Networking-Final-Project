@@ -25,7 +25,7 @@ class DNSResponseBuilder:
         self.qname, self.qtype, self.qclass, self.offset = question.parse_question(12)
 
     #building dns header for response
-    def build_header(self, ancount, rcode, aa):
+    def build_header(self, ancount, rcode, aa, nscount):
         # Extract RD from request (bit 8)
         rd = (self.flags >> 8) & 1
         # Build flags from scratch
@@ -52,7 +52,7 @@ class DNSResponseBuilder:
             response_flags,
             1,  # QDCOUNT
             ancount,  # ANCOUNT - answer count. how many answer records are in the Answer section
-            0,  # NSCOUNT
+            nscount,  # NSCOUNT
             0  # ARCOUNT
         )
         return header #pack returns bytes!
@@ -92,28 +92,67 @@ class DNSResponseBuilder:
         else:
             return b'' #empty bytes object
 
+    #function to encode dns name to format b'\x03ns1\x07example\x03com\x00
+    def encode_dns_name(self, dns_name):
+        dns_name = dns_name.lower().rstrip(".")
+        labels = dns_name.split('.')
+
+        encoded = b''
+        for label in labels:
+            length = len(label)   #taking length of label "ns1" = 3
+            encoded +=bytes([length]) #converting to 1 byte
+            encoded += label.encode() #add and encode
+        encoded += b'\x00'
+        return encoded
+
+    #building soa itself. we have 5 fixed size integers + dynamic mname and rname
+    def build_soa_record(self, soa_dict, zone_name):
+        soa_ints = struct.pack("!IIIII", soa_dict.get("serial"),
+                               soa_dict.get("refresh"),
+                               soa_dict.get("retry"),
+                               soa_dict.get("expire"),
+                               soa_dict.get("minimum"))
+        encoded_mname = self.encode_dns_name(soa_dict.get("mname"))
+        encoded_rname = self.encode_dns_name(soa_dict.get("rname"))
+
+        rdata = encoded_mname + encoded_rname + soa_ints
+        rdlength = len(rdata)
+
+        # NAME|TYPE|CLASS|TTL|RDLENGTH|RDATA
+        #encoded zone name for authority section
+        encoded_name = self.encode_dns_name(zone_name)
+        #type = 6, class = 1, ttl = 300
+        return (
+            encoded_name + struct.pack("!HHIH",6,1,300,rdlength) + rdata
+        )
+
         #packing up everything 2gether
-        # HEADER|QUESTION|ANSWER|AUTHORITY(dont have)|ADDITIONAL(dont have)
-    def build_response(self, aa, rcode, include_soa, ip = None):
+        # HEADER|QUESTION|ANSWER|AUTHORITY|ADDITIONAL(dont have)
+    def build_response(self, aa, rcode, zone_name, include_soa=False, ip = None, soa_data = None):
         self.parse_request()
 
 
         #working with soa for NXDOMAIN AND NODATA
         """FINISH SOA"""
         if include_soa:
-            pass
-
+            nscount = 1
+            authority = self.build_soa_record(soa_data, zone_name )
+        else:
+            nscount = 0
+            authority = b''
 
         if ip is not None:
             ancount = 1
         else:
             ancount = 0
+
+
         question = self.build_question_section()
         answer = self.build_answer_section(ip)
 
-        header = self.build_header(ancount, rcode, aa)
+        header = self.build_header(ancount, rcode, aa, nscount)
 
-        return header + question + answer
+        return header + question + answer + authority
 
 
 

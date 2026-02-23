@@ -46,4 +46,9 @@ class DNSServer:
                     rcode = 3
                     aa = 1
 
-        return builder.build_response(aa, rcode, include_soa, ip)
+        if include_soa:
+            soa_data = self.zone_database.get_soa()
+        else:
+            soa_data = None
+
+        return builder.build_response(aa, rcode, self.zone_database.get_name(),include_soa, ip, soa_data)
