@@ -1,12 +1,15 @@
 # Networking Project - Liz, Nicko and Mor
 
 ## Current Information:
-## DHCP:
-### 1. DHCP classes for client and server
-### 2. we need to implement the query functions of the offer, request and ack
+## DHCP: Server done
 
 ## DNS:
-### 1. currently nothing
+### Nicko made his Server
+### Objective: simplify the logic, no need for a robust DNS
+### create a public serve() function that wraps the logic (Encapsulation)
+
+## Client:
+### Objective: create a different socket for every server interaction
 
 ## FTP
 ### 1. currently nothing
