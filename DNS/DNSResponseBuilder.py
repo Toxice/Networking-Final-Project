@@ -135,7 +135,6 @@ class DNSResponseBuilder:
 
 
         #working with soa for NXDOMAIN AND NODATA
-        """FINISH SOA"""
         if include_soa:
             nscount = 1
             authority = self.build_soa_record(soa_data, zone_name )
