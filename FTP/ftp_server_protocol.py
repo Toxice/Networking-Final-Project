@@ -1,4 +1,4 @@
-# ftp_protocol.py
+# ftp_server_protocol.py
 
 def service_ready(self):
     return {"response": "service ready"}
