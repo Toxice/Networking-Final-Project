@@ -1,11 +1,9 @@
 # ftp_server.py
 
-import json
+import ftp_server_protocol
 import socket
 import threading
 import argparse
-
-FTP_PORT = 2121
 
 """
 FTP state machine:

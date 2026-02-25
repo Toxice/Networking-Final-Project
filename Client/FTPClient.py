@@ -177,12 +177,12 @@ class FTPClient:
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 
-    def send_RETR(self,filename, host = "127.0.0.0", port = 2121):
+    def send_retr(self,filename, host = "127.0.0.0", port = 2121):
         retr = retrieve(filename)
         encoded_retr = json.dumps(retr).encode('utf-8')
         self.client_socket.sendto(encoded_retr,(host, port))
 
-    def send_QUIT(self,filename,host = "127.0.0.0", port = 2121):
+    def send_quit(self,filename,host = "127.0.0.0", port = 2121):
         create_quit = quit()
         encoded_quit = json.dumps(create_quit).encode('utf-8')
         self.client_socket.sendto(encoded_quit,(host, port))
