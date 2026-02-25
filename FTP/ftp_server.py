@@ -30,9 +30,9 @@ def serve(host, port):
 
     while True:
         conn, addr = server.accept()
-        threading.Thread(target=handle_client(), args=(conn, addr)).start()
+        threading.Thread(target=handle_client, args=(conn, addr)).start()
 
-def handle_client():
+def handle_client(conn:socket.socket, addr):
     pass
     """
     this function handles the FTP state machine
