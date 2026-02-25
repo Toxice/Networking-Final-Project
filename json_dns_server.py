@@ -1,4 +1,4 @@
-from ZoneDatabase import ZoneDatabase
+from DNS.ZoneDatabase import ZoneDatabase
 from dns_service import resolve_request
 import json
 

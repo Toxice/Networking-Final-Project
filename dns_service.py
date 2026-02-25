@@ -1,5 +1,5 @@
 import json
-from ZoneDatabase import ZoneDatabase
+from DNS.ZoneDatabase import ZoneDatabase
 
 def resolve_request(database:ZoneDatabase, request_dict):
     url = request_dict.get("url")
