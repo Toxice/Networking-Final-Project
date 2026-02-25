@@ -2,6 +2,10 @@ import socket
 import json
 import random
 import uuid
+#n1k0
+from ftp_client_protocol import retrieve
+from ftp_client_protocol import quit
+#n1k0 is d0ne
 
 # --- קבועים למניעת "מספרי קסם" (Magic Numbers) --- [cite: 5]
 DHCP_SERVER_PORT = 67
@@ -167,6 +171,22 @@ class FTPClient:
     def connect_to_ftp_rudp(self):
         """מימוש FTP מעל Reliable UDP הכולל חלון דינמי ו-ACKs [cite: 48, 50]"""
         pass
+
+    #n1k0 coding...
+    def serve(self, host="127.0.0.1", port=2121):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+
+    def send_RETR(self,filename, host = "127.0.0.0", port = 2121):
+        retr = retrieve(filename)
+        encoded_retr = json.dumps(retr).encode('utf-8')
+        self.client_socket.sendto(encoded_retr,(host, port))
+
+    def send_QUIT(self,filename,host = "127.0.0.0", port = 2121):
+        create_quit = quit()
+        encoded_quit = json.dumps(create_quit).encode('utf-8')
+        self.client_socket.sendto(encoded_quit,(host, port))
+    #n1k0 is done
 
 
 if __name__ == "__main__":
