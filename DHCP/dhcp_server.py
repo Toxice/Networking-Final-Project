@@ -9,7 +9,7 @@ Example:
 """
 
 import argparse
-from dhcp_protocol import DHCPServer
+from Ingore.dhcp_protocol_ignore import DHCPServer
 
 
 def parse_args() -> argparse.Namespace:

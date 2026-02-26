@@ -5,6 +5,7 @@ import uuid
 #n1k0
 from ftp_client_protocol import retrieve
 from ftp_client_protocol import quit
+import argparse
 #n1k0 is d0ne
 
 # --- קבועים למניעת "מספרי קסם" (Magic Numbers) --- [cite: 5]
@@ -188,7 +189,7 @@ class FTPClient:
         self.client_socket.sendto(encoded_quit,(host, port))
     #n1k0 is done
 
-
 if __name__ == "__main__":
+
     client = FTPClient()
     client.run_dhcp_process()
