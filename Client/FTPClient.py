@@ -171,7 +171,6 @@ class FTPClient:
         """מימוש FTP מעל Reliable UDP הכולל חלון דינמי ו-ACKs [cite: 48, 50]"""
         pass
 
-    #n1k0 coding...
     def serve(self, host="127.0.0.1", port=2121):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -185,7 +184,6 @@ class FTPClient:
         create_quit = quit()
         encoded_quit = json.dumps(create_quit).encode('utf-8')
         self.client_socket.sendto(encoded_quit,(host, port))
-    #n1k0 is done
 
 if __name__ == "__main__":
 
