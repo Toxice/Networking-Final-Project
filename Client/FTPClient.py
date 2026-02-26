@@ -2,13 +2,11 @@ import socket
 import json
 import random
 import uuid
-#n1k0
 from ftp_client_protocol import retrieve
 from ftp_client_protocol import quit
 import argparse
-#n1k0 is d0ne
 
-# --- קבועים למניעת "מספרי קסם" (Magic Numbers) --- [cite: 5]
+# Magic Numbers
 DHCP_SERVER_PORT = 67
 DHCP_CLIENT_PORT = 68
 DNS_SERVER_PORT = 53
@@ -23,10 +21,10 @@ class FTPClient:
         self.assigned_ip = None
         self.dns_server_ip = None
         self.app_server_ip = None
-        # מזהה טרנזקציה רנדומלי לזיהוי השיחה מול השרת
-        self.transaction_id = random.randint(1000, 9999)
+        self.transaction_id = random.randint(1000, 9999) # a random session ID generator
         self.mac_address = self._get_real_mac()
 
+    # this function is redundant, please remove it
     def _get_real_mac(self):
         """משיכת כתובת ה-MAC האמיתית של המחשב לטובת קוד כללי [cite: 4]"""
         mac_int = uuid.getnode()
