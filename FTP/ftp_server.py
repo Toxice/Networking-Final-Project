@@ -24,7 +24,7 @@ def serve(host, port):
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((host, port))
     server.listen(1)
-    print(f"[FTP] Listening on {host}:{port}")
+    print("[FTP] Listening on {host}:{port}")
 
     while True:
         conn, addr = server.accept()
