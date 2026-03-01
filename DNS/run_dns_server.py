@@ -1,5 +1,5 @@
 from DNS.UdpTransport import UdpTransport
-from DNS.ZoneDatabase import ZoneDatabase
+from DNS.ZoneDatabase import (ZoneDatabase)
 from json_dns_server import json_dns_server
 
 
