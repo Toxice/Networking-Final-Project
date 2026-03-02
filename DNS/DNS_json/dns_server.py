@@ -65,7 +65,7 @@ def run_dns_server(host: str, port: int, zone_name: str):
     transport = UdpTransport(host, port)
     transport.initialize()
 
-    zone_database = ZoneDatabase(zone_name)
+    zone_database = ZoneDatabase()
     json_server = json_dns_server(zone_database)
 
     while True:
