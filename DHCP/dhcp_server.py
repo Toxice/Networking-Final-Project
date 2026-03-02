@@ -5,11 +5,11 @@ Usage:
     python dhcp_server.py --ip-mask <mask> --allocation <count>
 
 Example:
-    python dhcp_server.py --ip-mask 192.168.1 --allocation 50
+    python dhcp_server.py --ip-mask 192.168.1 --allocation 50 --dns 127.0.0.1
 """
 
 import argparse
-from dhcp_protocol import DHCPServer
+from dhcp_protocol_new import DHCPServer
 
 
 def parse_args() -> argparse.Namespace:
@@ -29,6 +29,12 @@ def parse_args() -> argparse.Namespace:
         default=10,
         help="Number of IPs to allocate (2–256, defaults to 10 if out of range).",
     )
+    parser.add_argument(
+        "--dns",
+        type=str,
+        default="127.0.0.1",
+        help="DNS IP address"
+    )
     return parser.parse_args()
 
 
@@ -44,6 +50,7 @@ def main():
     server = DHCPServer(
         ip_mask=args.ip_mask,
         allocation=args.allocation,
+        dns=args.dns
     )
     server.serve()
 
