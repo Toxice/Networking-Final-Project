@@ -23,18 +23,18 @@ class DHCPServer:
         return [f"{self.ip_mask}.{i}" for i in range(1, self.alloc + 1)]
 
     def serve(self):
-        self.server.bind(("", Port_In))  # fix: socket must be bound before recvfrom
+        self.server.bind(("", Port_In))
         print(f"[DHCP] Listening on Port {Port_In}...")
         while True:
             data, address = self.server.recvfrom(1024)
-            print(f"[DHCP] Got a request from {address}")
+            print(f"[DHCP] Got a DHCP Request")
 
             request = json.loads(data.decode(encoding="utf-8"))
             match request.get("type"):
                 case "DISCOVER":
-                    self.handle_offer(request.get("id"))
+                    self.handle_discover(request.get("id"))
                 case "REQUEST":
-                    self.handle_ack(request.get("id"))
+                    self.handle_request(request.get("id"))
 
     def dhcp_offer(self, message_id: int):
         """
@@ -51,7 +51,7 @@ class DHCPServer:
 
     def dhcp_ack(self, message_id: int):
         """
-        Creates the ACK message and removes the leased IP from the pool.
+        Creates the ACK message and removes the IP from the pool.
         :param message_id: Transaction ID
         :return: ACK message as bytes
         """
@@ -62,14 +62,14 @@ class DHCPServer:
         }
         return json.dumps(payload).encode(encoding="utf-8")
 
-    def handle_offer(self, transaction_id: int):
+    def handle_discover(self, transaction_id: int):
         if not self.ip_pool:
             print("[DHCP] No IPs available, ignoring DISCOVER.")
             return
         response = self.dhcp_offer(transaction_id)
         self.server.sendto(response, (Broadcast_In, Port_Out))
 
-    def handle_ack(self, transaction_id: int):
+    def handle_request(self, transaction_id: int):
         if not self.ip_pool:
             print("[DHCP] No IPs available, ignoring REQUEST.")
             return

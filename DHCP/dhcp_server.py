@@ -9,19 +9,13 @@ Example:
 """
 
 import argparse
-from Ingore.dhcp_protocol_ignore import DHCPServer
+from dhcp_protocol import DHCPServer
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Start a DHCP server.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        "--lease-time",
-        type=int,
-        required=True,
-        help="IP lease duration in seconds (e.g. 3600).",
     )
     parser.add_argument(
         "--ip-mask",
@@ -49,7 +43,6 @@ def main() -> None:
     )
 
     server = DHCPServer(
-        lease_time=args.lease_time,
         ip_mask=args.ip_mask,
         allocation=args.allocation,
     )
