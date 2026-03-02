@@ -2,8 +2,6 @@ import socket
 import random
 import time
 
-
-from dns_protocol import *
 # a class for working with raw socket
 class UdpTransport:
     #constructor
@@ -61,26 +59,17 @@ class UdpTransport:
             self.sock.close()
 
 
-def run_dns_server(host: str, port: int):
-    transport = UdpTransport(host, port)
-    transport.initialize()
-
-    zone_database = ZoneDatabase()
-    json_server = json_dns_server(zone_database)
-
-    while True:
-        try:
-            data, addr = transport.receive()
-        except Exception:
-            continue
-        if not data:
-            continue
-        response = json_server.handle(data)
-        transport.send(response, addr)
-
-def serve():
-    #127.0.0.1
-    run_dns_server("127.0.0.1", 9000)
-
 if __name__ == "__main__":
-    serve()
+    transport = UdpTransport("127.0.0.1", 8053,2,1024,0.1,0.1,200)
+    transport.initialize()
+    try:
+        while True:
+            data,addr = transport.receive()
+            if data is None:
+               continue
+            print(f"data is: {data.decode()}, addr is: {addr}")
+            transport.send("he sure will be".encode(), addr)
+    except KeyboardInterrupt:
+        print("Shutting down UDP server")
+    finally:
+        transport.close()

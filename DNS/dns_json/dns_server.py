@@ -79,6 +79,7 @@ def run_dns_server(host: str, port: int):
         transport.send(response, addr)
 
 def serve():
+    #127.0.0.1
     run_dns_server("127.0.0.1", 9000)
 
 if __name__ == "__main__":
