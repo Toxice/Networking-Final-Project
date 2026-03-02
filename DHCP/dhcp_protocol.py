@@ -1,5 +1,6 @@
 import json
 import socket
+import threading
 
 Broadcast_In = "255.255.255.255"
 Broadcast_Out = "0.0.0.0"
@@ -33,9 +34,9 @@ class DHCPServer:
             request = json.loads(data.decode(encoding="utf-8"))
             match request.get("type"):
                 case "DISCOVER":
-                    self.handle_discover(request.get("id"))
+                    threading.Thread(target=self.handle_discover, args=(request.get("id"))).start()
                 case "REQUEST":
-                    self.handle_request(request.get("id"))
+                    threading.Thread(target=self.handle_request, args=(request.get("id"))).start()
 
     def dhcp_offer(self, message_id: int):
         """
