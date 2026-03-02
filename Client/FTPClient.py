@@ -57,7 +57,9 @@ class FTPClient:
         return False
 
     def _send_dhcp_discover(self, sock):
-        payload = {"message_type": "DISCOVER", "transaction_id": self.transaction_id, "client_mac": self.mac_address}
+        payload = {"message_type": "DISCOVER",
+                   "transaction_id": self.transaction_id,
+                   "client_mac": self.mac_address}
         sock.sendto(json.dumps(payload).encode('utf-8'), (BROADCAST_IP, DHCP_SERVER_PORT))
 
     def _receive_offer(self, sock):
@@ -71,7 +73,9 @@ class FTPClient:
             return None
 
     def _send_dhcp_request(self, sock, offered_ip):
-        payload = {"message_type": "REQUEST", "transaction_id": self.transaction_id, "requested_ip": offered_ip}
+        payload = {"message_type": "REQUEST",
+                   "transaction_id": self.transaction_id,
+                   "requested_ip": offered_ip}
         sock.sendto(json.dumps(payload).encode('utf-8'), (BROADCAST_IP, DHCP_SERVER_PORT))
 
     def _receive_dhcp_ack(self, sock):
