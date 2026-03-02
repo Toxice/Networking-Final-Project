@@ -61,11 +61,11 @@ class UdpTransport:
             self.sock.close()
 
 
-def run_dns_server(host: str, port: int, zone_name: str):
+def run_dns_server(host: str, port: int):
     transport = UdpTransport(host, port)
     transport.initialize()
 
-    zone_database = ZoneDatabase(zone_name)
+    zone_database = ZoneDatabase()
     json_server = json_dns_server(zone_database)
 
     while True:
@@ -79,7 +79,7 @@ def run_dns_server(host: str, port: int, zone_name: str):
         transport.send(response, addr)
 
 def serve():
-    run_dns_server("127.0.0.1", 9000, "example.com")
+    run_dns_server("127.0.0.1", 9000)
 
 if __name__ == "__main__":
     serve()
