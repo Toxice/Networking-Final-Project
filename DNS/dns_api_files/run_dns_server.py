@@ -1,5 +1,5 @@
-from DNS.bitwisw_dns_files.UdpTransport import UdpTransport
-from DNS.bitwisw_dns_files.ZoneDatabase import (ZoneDatabase)
+from DNS.dns_api_files.UdpTransport import UdpTransport
+from DNS.dns_api_files.ZoneDatabase import (ZoneDatabase)
 from json_dns_server import json_dns_server
 
 
