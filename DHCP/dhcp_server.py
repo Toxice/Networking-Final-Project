@@ -2,10 +2,10 @@
 dhcp_server.py - CLI entrypoint for DHCPServer
 
 Usage:
-    python dhcp_server.py --lease-time <seconds> --ip-mask <mask> --allocation <count>
+    python dhcp_server.py --ip-mask <mask> --allocation <count>
 
 Example:
-    python dhcp_server.py --lease-time 3600 --ip-mask 192.168.1 --allocation 50
+    python dhcp_server.py --ip-mask 192.168.1 --allocation 50
 """
 
 import argparse
@@ -20,6 +20,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--ip-mask",
         type=str,
+        default="127.0.0.1",
         required=True,
         help="24-bit IP prefix for the address pool (e.g. '192.168.1').",
     )
@@ -39,7 +40,6 @@ def main() -> None:
         f"[DHCP] Starting server | "
         f"mask={args.ip_mask}.0/24 | "
         f"pool={args.allocation} IPs | "
-        f"lease={args.lease_time}s"
     )
 
     server = DHCPServer(
