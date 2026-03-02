@@ -24,12 +24,15 @@ class FTPClient:
         self.mac_address = self._get_mac()
 
     def _get_mac(self):
-        """משיכת כתובת ה-MAC של המחשב"""
+        """
+        pull MAC Address out of one Computer
+        :return: MAC Address
+        """
         mac_int = uuid.getnode()
         mac_hex = iter(hex(mac_int)[2:].zfill(12))
         return ":".join(a + b for a, b in zip(mac_hex, mac_hex)).upper()
 
-    # --- שלב 1: DHCP ---
+    # Level 1 - DHCP Process
     def run_dhcp_process(self):
         print("--- Starting DHCP Process ---")
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -89,7 +92,7 @@ class FTPClient:
         except:
             return False
 
-    # --- שלב 2: DNS ---
+    # Level 2 - DNS
     def get_server_address(self, hostname):
         if not self.dns_server_ip:
             print("No DNS server IP available.")
@@ -99,7 +102,10 @@ class FTPClient:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         for _ in range(MAX_RETRIES):
-            payload = {"message_type": "REQUEST", "transaction_id": self.transaction_id, "hostname": hostname}
+            payload = {"message_type": "REQUEST",
+                       "transaction_id": self.transaction_id,
+                       "hostname": hostname
+                       }
             sock.sendto(json.dumps(payload).encode('utf-8'), (self.dns_server_ip, DNS_SERVER_PORT))
 
             sock.settimeout(TIMEOUT_SECONDS)
@@ -117,7 +123,7 @@ class FTPClient:
         sock.close()
         return None
 
-    # --- שלב 3: FTP Control & Data ---
+    # Level 3 - FTP Control Mechanism
     def request_file(self, filename, mode="TCP"):
         if not self.app_server_ip:
             print("Error: No server IP. Did DNS fail?")

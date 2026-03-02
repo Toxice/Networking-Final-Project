@@ -1,5 +1,6 @@
 import json
 import socket
+import config
 
 Broadcast_In = "255.255.255.255"
 Broadcast_Out = "0.0.0.0"
@@ -8,7 +9,7 @@ Port_Out = 6868
 
 
 class DHCPServer:
-    def __init__(self, ip_mask: str, allocation: int, dns):
+    def __init__(self, ip_mask: str, allocation: int):
         """
         DHCP Constructor
         :param ip_mask: 3 part string of ip, 24bit (like "192.168.10")
@@ -20,12 +21,19 @@ class DHCPServer:
         self.ip_mask = ip_mask
         self.ip_pool = self.__generate_pool()
         self.transaction_id = None
-        self.dns_server = dns
+        self.dns_server = config.DNS_IP
 
     def __generate_pool(self):
+        """
+        generate IP Pool
+        :return: IP array
+        """
         return [f"{self.ip_mask}.{i}" for i in range(1, self.alloc + 1)]
 
     def serve(self):
+        """
+        set up the socket
+        """
         self.server.bind((Broadcast_Out, Port_In))
         print(f"[DHCP] Listening on Port {Port_In}...")
         while True:
@@ -84,14 +92,18 @@ class DHCPServer:
         if not self.ip_pool:
             print("[DHCP] No IPs available, ignoring DISCOVER.")
             return
+
         response = self.dhcp_offer(transaction_id)
         print(f"[DHCP] received DISCOVER on id: {transaction_id}")
+
         self.server.sendto(response, (Broadcast_In, Port_Out))
 
     def handle_request(self, transaction_id: int, ip_address):
         if not self.ip_pool:
             print("[DHCP] No IPs available, ignoring REQUEST.")
             return
+
         response = self.dhcp_ack(transaction_id, ip_address)
+
         print(f"[DHCP] received REQUEST on id {transaction_id}")
         self.server.sendto(response, (Broadcast_In, Port_Out))
