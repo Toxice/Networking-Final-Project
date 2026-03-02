@@ -1,15 +1,20 @@
-# Networking Project - Liz, Nicko and Mor
+# Networking Final Project - FTP Server
 
-## Current Information:
-## DHCP: Server done
+In This Project we've implemented a simple **FTP Server over TCP/RUDP** using JSON based protocols
+We've Also implemented a Bitwise DNS Server and a DHCP Server
+---
 
-## DNS: Done
+##  Assignment Architecture
 
-## Client: Mostly Done
+### Components
 
-## FTP: research done, implementation needed
+- **DNS Server (`server.py`)**
 
+- **Client (`client.py`)**
 
-### SUKI LISTEN UP:
-# you are to work with main_json.py only. we have func of run_dns_server(HOST, PORT, ZONE_NAME)
-# just put it and run client. Client sends request = {"url": "www.example.com"} and gets a response sukI!!!
+- **DHCP Server (`proxy.py`)**
+
+- **FTP Server**
+
+---
+

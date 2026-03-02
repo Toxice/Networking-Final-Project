@@ -1,5 +1,4 @@
-import json
-from DNS.ZoneDatabase import ZoneDatabase
+from DNS.bitwisw_dns_files.ZoneDatabase import ZoneDatabase
 
 def resolve_request(database:ZoneDatabase, request_dict):
     url = request_dict.get("url")

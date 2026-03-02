@@ -1,4 +1,4 @@
-from DNS.run_dns_server import run_dns_server
+from DNS.bitwisw_dns_files.run_dns_server import run_dns_server
 
 if __name__ == "__main__":
     #server (run_dns_server)
