@@ -5,6 +5,7 @@ Broadcast_In = "255.255.255.255"
 Broadcast_Out = "0.0.0.0"
 Port_In = 67
 Port_Out = 68
+DNS = "127.0.0.1"
 
 class DHCPServer:
     def __init__(self,ip_mask: str, allocation: int):
@@ -45,7 +46,8 @@ class DHCPServer:
         payload = {
             "type": "OFFER",
             "id": message_id,
-            "ip": self.ip_pool[0]
+            "ip": self.ip_pool[0],
+            "dns": DNS
         }
         return json.dumps(payload).encode(encoding="utf-8")
 
@@ -58,7 +60,8 @@ class DHCPServer:
         payload = {
             "type": "ACK",
             "id": message_id,
-            "ip": self.ip_pool.pop(0)
+            "ip": self.ip_pool.pop(0),
+            "dns": DNS
         }
         return json.dumps(payload).encode(encoding="utf-8")
 
@@ -67,6 +70,7 @@ class DHCPServer:
             print("[DHCP] No IPs available, ignoring DISCOVER.")
             return
         response = self.dhcp_offer(transaction_id)
+        print(f"[DHCP] received DISCOVER on id: {transaction_id}")
         self.server.sendto(response, (Broadcast_In, Port_Out))
 
     def handle_request(self, transaction_id: int):
@@ -74,4 +78,5 @@ class DHCPServer:
             print("[DHCP] No IPs available, ignoring REQUEST.")
             return
         response = self.dhcp_ack(transaction_id)
+        print(f"[DHCP] received REQUEST on id {transaction_id}")
         self.server.sendto(response, (Broadcast_In, Port_Out))
