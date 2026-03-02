@@ -20,12 +20,13 @@ class DHCPServer:
         self.alloc = allocation if (2 <= allocation <= 10) else 10
         self.ip_mask = ip_mask
         self.ip_pool = self.__generate_pool()
+        self.transaction_id:int
 
     def __generate_pool(self):
         return [f"{self.ip_mask}.{i}" for i in range(1, self.alloc + 1)]
 
     def serve(self):
-        self.server.bind(("", Port_In))
+        self.server.bind((Broadcast_Out, Port_In))
         print(f"[DHCP] Listening on Port {Port_In}...")
         while True:
             data, address = self.server.recvfrom(1024)
@@ -36,35 +37,42 @@ class DHCPServer:
                 case "DISCOVER":
                     threading.Thread(target=self.handle_discover, args=(request.get("id"))).start()
                 case "REQUEST":
-                    threading.Thread(target=self.handle_request, args=(request.get("id"))).start()
+                    threading.Thread(target=self.handle_request, args=(request.get("id"), request.get("ip"))).start()
 
-    def dhcp_offer(self, message_id: int):
+    def dhcp_offer(self, transaction_id: int):
         """
         Creates the OFFER message (does NOT remove the IP from the pool yet).
-        :param message_id: Transaction ID
+        :param transaction_id: Transaction ID
         :return: OFFER message as bytes
         """
         payload = {
             "type": "OFFER",
-            "id": message_id,
+            "id": transaction_id,
             "ip": self.ip_pool[0],
             "dns": DNS
         }
         return json.dumps(payload).encode(encoding="utf-8")
 
-    def dhcp_ack(self, message_id: int):
+    def dhcp_ack(self, transaction_id: int, ip_address):
         """
         Creates the ACK message and removes the IP from the pool.
-        :param message_id: Transaction ID
+        :param ip_address: the IP address was allocated by the server earlier
+        :param transaction_id: Transaction ID
         :return: ACK message as bytes
         """
-        payload = {
-            "type": "ACK",
-            "id": message_id,
-            "ip": self.ip_pool.pop(0),
-            "dns": DNS
-        }
-        return json.dumps(payload).encode(encoding="utf-8")
+        if ip_address == self.ip_pool[0]:
+            payload = {
+                "type": "ACK",
+                "id": transaction_id,
+                "ip": self.ip_pool.pop(0),
+                "dns": DNS
+            }
+            return json.dumps(payload).encode(encoding="utf-8")
+        else:
+            return {
+                "type": "NACK",
+                "id": transaction_id
+            }
 
     def handle_discover(self, transaction_id: int):
         if not self.ip_pool:
@@ -74,10 +82,10 @@ class DHCPServer:
         print(f"[DHCP] received DISCOVER on id: {transaction_id}")
         self.server.sendto(response, (Broadcast_In, Port_Out))
 
-    def handle_request(self, transaction_id: int):
+    def handle_request(self, transaction_id: int, ip_address):
         if not self.ip_pool:
             print("[DHCP] No IPs available, ignoring REQUEST.")
             return
-        response = self.dhcp_ack(transaction_id)
+        response = self.dhcp_ack(transaction_id, ip_address)
         print(f"[DHCP] received REQUEST on id {transaction_id}")
         self.server.sendto(response, (Broadcast_In, Port_Out))

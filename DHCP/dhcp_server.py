@@ -21,7 +21,6 @@ def parse_args() -> argparse.Namespace:
         "--ip-mask",
         type=str,
         default="127.0.0",
-        required=True,
         help="24-bit IP prefix for the address pool (e.g. '192.168.1').",
     )
     parser.add_argument(
@@ -33,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
+def main():
     args = parse_args()
 
     print(
