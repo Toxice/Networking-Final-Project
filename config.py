@@ -16,7 +16,7 @@ def load_json(filename):
 
 # --- Load all JSON files here ---
 dhcp_data = load_json("dhcp.json")
-dns_database = load_json("dns_data_base.json")
+dns_database = load_json("dns.json")
 
 # --- Export specific variables for your modules to use ---
 # Database Module Settings
