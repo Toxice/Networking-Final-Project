@@ -1,6 +1,6 @@
 import json
 import socket
-import config
+import json_config
 
 Broadcast_In = "255.255.255.255"
 Broadcast_Out = "0.0.0.0"
@@ -21,7 +21,7 @@ class DHCPServer:
         self.ip_mask = ip_mask
         self.ip_pool = self.__generate_pool()
         self.transaction_id = None
-        self.dns_server = config.DNS_IP
+        self.dns_server = json_config.DNS_IP
 
     def __generate_pool(self):
         """
