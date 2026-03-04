@@ -34,7 +34,7 @@ class DHCPServer:
 
             request = json.loads(data.decode(encoding="utf-8"))
 
-            # Updated to match FTPClient.py keys
+            # Updated to match ftp_client.py keys
             match request.get("message_type"):
                 case "DISCOVER":
                     self.handle_discover(request.get("transaction_id"))
@@ -47,7 +47,7 @@ class DHCPServer:
         :param transaction_id: Transaction ID
         :return: OFFER message as bytes
         """
-        # Updated to match FTPClient.py keys
+        # Updated to match ftp_client.py keys
         payload = {
             "message_type": "OFFER",
             "transaction_id": transaction_id,
@@ -64,7 +64,7 @@ class DHCPServer:
         :return: ACK message as bytes
         """
         if ip_address == self.ip_pool[0]:
-            # Updated to match FTPClient.py keys
+            # Updated to match ftp client.py keys
             payload = {
                 "message_type": "ACK",
                 "transaction_id": transaction_id,
