@@ -1,178 +1,172 @@
-import base64
 import socket
 import json
 import threading
 import time
+import os
+import struct
 
 
 class FTPServer:
     def __init__(self, host='0.0.0.0'):
         self.host = host
         self.control_port = 2121
-
-        # הגדרות RUDP (מבוסס על ערכי ברירת מחדל)
-        self.max_msg_size = 60000  # גודל צ'אנק (קרוב ל-64KB)
+        self.music_dir = "server_music"  # התיקייה עם השירים
+        self.max_msg_size = 30000  # גודל חבילה ל-RUDP
         self.sliding_window = 5  # גודל חלון
-        self.timeout = 2.0  # זמן המתנה ל-ACK בשניות
+        self.timeout = 2.0  # זמן המתנה ל-ACK
+
+        # יצירת התיקייה אם היא לא קיימת
+        if not os.path.exists(self.music_dir):
+            os.makedirs(self.music_dir)
+            print(f"Created directory: {self.music_dir}. Please put your MP3 files there.")
+
+    def get_music_list(self):
+        """סורק את התיקייה ומחזיר רשימה של עד 3 שירים"""
+        files = [f for f in os.listdir(self.music_dir) if f.endswith('.mp3')]
+        return files[:3]
 
     def start_server(self):
-        # 1. יצירת Listening Socket ב-TCP (ערוץ הבקרה)
+        # יצירת Socket לערוץ הבקרה (TCP)
         welcome_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        welcome_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # מאפשר הרצה חוזרת מהירה
+        welcome_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         welcome_sock.bind((self.host, self.control_port))
         welcome_sock.listen(5)
-        print(f"Control Channel listening on TCP port {self.control_port}...")
+        print(f"FTP Server is up! Control Channel on port {self.control_port}")
 
         while True:
             try:
-                # המתנה לחיבור קליינט
                 control_conn, addr = welcome_sock.accept()
-                print(f"New connection from {addr}")
+                print(f"\n[Control] Connected to {addr}")
 
-                # קבלת פקודת JSON בערוץ הבקרה
-                data = control_conn.recv(1024).decode('utf-8')
-                if not data:
+                # 1. שליחת תפריט השירים לקליינט מיד עם החיבור
+                music_list = self.get_music_list()
+                menu_data = json.dumps({"type": "MENU", "files": music_list})
+                control_conn.send((menu_data + "\n").encode('utf-8'))
+
+                # 2. קבלת הבקשה מהקליינט (איזה קובץ ובאיזה מצב)
+                raw_request = control_conn.recv(1024).decode('utf-8')
+                if not raw_request:
                     continue
 
-                request = json.loads(data)
-                mode = request.get("mode")  # "TCP" או "RUDP"
+                request = json.loads(raw_request)
                 filename = request.get("filename")
+                mode = request.get("mode")  # "TCP" או "RUDP"
 
+                file_path = os.path.join(self.music_dir, filename)
+
+                if not os.path.exists(file_path):
+                    error_msg = json.dumps({"status": "error", "message": "File not found on server"})
+                    control_conn.send(error_msg.encode('utf-8'))
+                    control_conn.close()
+                    continue
+
+                # 3. ניתוב להעברה המתאימה
                 if mode == "RUDP":
-                    # שליחת הטיפול ב-RUDP ל-Thread נפרד כדי לא לחסום את השרת
-                    threading.Thread(target=self.handle_rudp_transfer, args=(control_conn, filename, addr)).start()
+                    threading.Thread(target=self.handle_rudp_transfer, args=(control_conn, file_path, addr)).start()
                 else:
-                    self.handle_tcp_transfer(control_conn, filename)
+                    self.handle_tcp_transfer(control_conn, file_path)
 
             except Exception as e:
-                print(f"Main Loop Error: {e}")
+                print(f"Server Error: {e}")
 
-    def handle_rudp_transfer(self, control_conn, filename, client_addr):
-        """שליחת קובץ ב-RUDP אמין עם Sliding Window"""
-        print(f"Opening RUDP Sender for {filename} to {client_addr}")
-
-        # 1. יצירת סוקט UDP להעברת הנתונים
-        data_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        data_sock.bind((self.host, 0))
-        data_port = data_sock.getsockname()[1]
-
+    def handle_tcp_transfer(self, control_conn, file_path):
+        """העברת קובץ ב-TCP סטנדרטי"""
+        print(f"[TCP] Starting transfer for: {file_path}")
         try:
-            # 2. הודעה ללקוח דרך ה-TCP באיזה פורט UDP להאזין
-            response = json.dumps({"status": "ready", "mode": "RUDP", "data_port": data_port})
-            control_conn.send(response.encode('utf-8'))
-            control_conn.close()  # סיימנו עם ערוץ הבקרה עבור בקשה זו
-
-            # 3. קריאת הקובץ ופירוק לפאקטים
-            with open(filename, "rb") as f:
-                file_bytes = f.read()
-
-            packets = []
-            packet_counter = 0
-            temp_bytes = file_bytes
-            while temp_bytes:
-                chunk = temp_bytes[:self.max_msg_size]
-                temp_bytes = temp_bytes[self.max_msg_size:]
-                packet = {
-                    "type": "DATA",
-                    "num": packet_counter,
-                    "payload": base64.b64encode(chunk).decode("ascii")
-                }
-                packets.append(packet)
-                packet_counter += 1
-
-            total_packets = len(packets)
-            print(f"File split into {total_packets} packets.")
-
-            # 4. ניהול משתני חלון
-            last_ack = -1
-            next_to_send = 0
-            timer = None
-            lock = threading.Lock()  # להגנה על משתנה ה-last_ack
-
-            def ack_receiver():
-                nonlocal last_ack
-                data_sock.settimeout(self.timeout)
-                while last_ack < total_packets - 1:
-                    try:
-                        raw_ack, _ = data_sock.recvfrom(1024)
-                        ans = json.loads(raw_ack.decode('utf-8'))
-                        if ans.get("type") == "ACK":
-                            received_num = ans.get("num")
-                            with lock:
-                                if received_num > last_ack:
-                                    last_ack = received_num
-                                    print(f"ACK received for packet {last_ack}")
-                    except socket.timeout:
-                        continue
-                    except Exception as e:
-                        print(f"ACK Receiver error: {e}")
-                        break
-
-            # הפעלת Thread להאזנה ל-ACKs
-            threading.Thread(target=ack_receiver, daemon=True).start()
-
-            # 5. לולאת השליחה (Sliding Window)
-            client_udp_endpoint = (client_addr[0], 5556)  # הלקוח מאזין בפורט הקבוע שלו
-
-            while last_ack < total_packets - 1:
-                with lock:
-                    start_of_window = last_ack + 1
-                    end_of_window = min(start_of_window + self.sliding_window - 1, total_packets - 1)
-
-                # שליחת פאקטים בחלון
-                if next_to_send <= end_of_window:
-                    msg = (json.dumps(packets[next_to_send]) + "\n").encode("utf-8")
-                    data_sock.sendto(msg, client_udp_endpoint)
-
-                    if next_to_send == start_of_window:
-                        timer = time.perf_counter()
-                    next_to_send += 1
-
-                # בדיקת Timeout
-                if timer and (time.perf_counter() - timer > self.timeout):
-                    print(f"Timeout! Resending from packet {start_of_window}")
-                    next_to_send = start_of_window
-                    timer = time.perf_counter()
-
-                time.sleep(0.001)  # מניעת עומס על ה-CPU
-
-            # 6. סיום
-            data_sock.sendto(json.dumps({"type": "END"}).encode("utf-8"), client_udp_endpoint)
-            print(f"Transfer of {filename} via RUDP complete.")
-
-        except FileNotFoundError:
-            print(f"File {filename} not found.")
-        except Exception as e:
-            print(f"RUDP Transfer Error: {e}")
-        finally:
-            data_sock.close()
-
-    def handle_tcp_transfer(self, control_conn, filename):
-        """העברה ב-TCP רגיל"""
-        print(f"Transferring {filename} via standard TCP...")
-        try:
+            # פתיחת פורט נתונים דינמי
             data_welcome_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             data_welcome_sock.bind((self.host, 0))
             data_port = data_welcome_sock.getsockname()[1]
             data_welcome_sock.listen(1)
 
+            # שליחת הפורט לקליינט
             response = json.dumps({"status": "ready", "mode": "TCP", "data_port": data_port})
             control_conn.send(response.encode('utf-8'))
 
+            # קבלת חיבור בפורט הנתונים
             data_conn, addr = data_welcome_sock.accept()
-            with open(filename, "rb") as f:
-                while chunk := f.read(4096):
+            with open(file_path, "rb") as f:
+                while chunk := f.read(8192):
                     data_conn.sendall(chunk)
 
-            print(f"Finished sending {filename}")
+            print(f"[TCP] Finished sending {file_path}")
             data_conn.close()
             data_welcome_sock.close()
             control_conn.close()
-
-        except FileNotFoundError:
-            control_conn.send(json.dumps({"status": "error", "message": "File not found"}).encode('utf-8'))
         except Exception as e:
-            print(f"TCP Transfer Error: {e}")
+            print(f"[TCP] Error: {e}")
+
+    def handle_rudp_transfer(self, control_conn, file_path, client_addr):
+        """העברת קובץ ב-RUDP (UDP אמין) עם Sliding Window"""
+        print(f"[RUDP] Starting transfer for: {file_path}")
+        data_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        data_sock.bind((self.host, 0))
+        data_port = data_sock.getsockname()[1]
+
+        try:
+            # הודעה לקליינט על פורט הנתונים ב-UDP
+            response = json.dumps({"status": "ready", "mode": "RUDP", "data_port": data_port})
+            control_conn.send(response.encode('utf-8'))
+            control_conn.close()
+
+            # קריאת הקובץ ופירוק לפאקטים
+            with open(file_path, "rb") as f:
+                file_bytes = f.read()
+
+            packets = [file_bytes[i:i + self.max_msg_size] for i in range(0, len(file_bytes), self.max_msg_size)]
+            total_packets = len(packets)
+
+            last_ack = -1
+            next_to_send = 0
+            client_data_endpoint = None  # יתעדכן עם ה-ACK הראשון
+            lock = threading.Lock()
+
+            # פונקציה פנימית להאזנה ל-ACKs
+            def ack_receiver():
+                nonlocal last_ack, client_data_endpoint
+                data_sock.settimeout(self.timeout)
+                while last_ack < total_packets - 1:
+                    try:
+                        raw_ack, addr = data_sock.recvfrom(1024)
+                        client_data_endpoint = addr  # שמירת הכתובת והפורט של הקליינט
+                        ans = json.loads(raw_ack.decode('utf-8'))
+                        if ans.get("type") == "ACK":
+                            with lock:
+                                last_ack = max(last_ack, ans.get("num"))
+                    except:
+                        continue
+
+            threading.Thread(target=ack_receiver, daemon=True).start()
+
+            # לולאת השליחה
+            while last_ack < total_packets - 1:
+                with lock:
+                    end_of_window = min(last_ack + self.sliding_window, total_packets - 1)
+
+                while next_to_send <= end_of_window:
+                    if client_data_endpoint:
+                        # שליחת Header בינארי (ID וסה"כ פאקטים) + ה-Data
+                        header = struct.pack("!II", next_to_send, total_packets)
+                        data_sock.sendto(header + packets[next_to_send], client_data_endpoint)
+                    next_to_send += 1
+
+                time.sleep(0.01)  # מניעת עומס
+
+                # מנגנון Timeout פשוט - חזרה אחורה אם לא התקבל ACK
+                if last_ack < next_to_send - self.sliding_window:
+                    next_to_send = last_ack + 1
+
+            # שליחת הודעת סיום
+            if client_data_endpoint:
+                for _ in range(5):  # וידוא הגעה
+                    data_sock.sendto(b"DONE", client_data_endpoint)
+
+            print(f"[RUDP] Finished sending {file_path}")
+
+        except Exception as e:
+            print(f"[RUDP] Error: {e}")
+        finally:
+            data_sock.close()
 
 
 if __name__ == "__main__":
