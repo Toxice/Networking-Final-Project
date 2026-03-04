@@ -7,7 +7,7 @@ import struct
 
 
 class FTPServer:
-    def __init__(self, host='0.0.0.0'):
+    def __init__(self, host='127.0.0.1'):
         self.host = host
         self.control_port = 2121
         self.music_dir = "server_music"  # התיקייה עם השירים
@@ -63,7 +63,7 @@ class FTPServer:
                 # 3. ניתוב להעברה המתאימה
                 if mode == "RUDP":
                     threading.Thread(target=self.handle_rudp_transfer, args=(control_conn, file_path, addr)).start()
-                else:
+                elif mode == "TCP":
                     self.handle_tcp_transfer(control_conn, file_path)
 
             except Exception as e:
@@ -100,7 +100,7 @@ class FTPServer:
         """העברת קובץ ב-RUDP (UDP אמין) עם Sliding Window"""
         print(f"[RUDP] Starting transfer for: {file_path}")
         data_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        data_sock.bind((self.host, 0))
+        data_sock.bind((self.host, ))
         data_port = data_sock.getsockname()[1]
 
         try:

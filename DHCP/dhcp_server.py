@@ -7,6 +7,10 @@ Usage:
 Example:
     python dhcp_server.py --ip-mask 192.168.1 --allocation 50 --dns 127.0.0.1
 """
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import argparse
 from dhcp_protocol import DHCPServer
