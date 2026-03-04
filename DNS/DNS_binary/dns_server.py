@@ -26,7 +26,7 @@ class UdpTransport:
         self.sock.bind((self.host, self.port))
         self.sock.settimeout(self.timeout)
         self.running = True
-        print(f"UDP server running on {self.host}:{self.port}")
+        print(f"DNS server running on {self.host}:{self.port}")
 
     def receive(self):
         try:
