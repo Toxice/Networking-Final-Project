@@ -1,12 +1,17 @@
 # dhcp_header.py
 
 import struct
+import secrets
 from dataclasses import dataclass
+
+'''
+    we will use secrets.randbits(32) for xid
+'''
 
 @dataclass
 class DHCPHeader:
     # DHCP Header Fields
-    op: int = 1 # Operation Code | Default to 1
+    op: int = 1 # Operation Code | Default to 1 (1 - DISCOVER/REQUEST | 2 - OFFER/ACK)
     htype: int = 1 # Default at 1 for Ethernet
     hlen: int = 6 # Hardware Length | Default at 6 for MAC Address
     hops: int = 0 # Hop Count
@@ -39,6 +44,69 @@ class DHCPHeader:
             self.magic_cookie
         )
         return header_bytes + options + b'\xff'  # End option
+
+    @staticmethod
+    def create_option(code: int, value: bytes) -> bytes:
+        """
+        Enter Your Option Value to the option field
+        :param code:
+        :param value:
+        :return:
+        """
+        return struct.pack("!BB", code, len(value)) + value
+
+    def create_discover(self, xid: int, mac_address: bytes) -> bytes:
+        """
+        DHCPDISCOVER
+        :param xid: transaction id
+        :param mac_address: MAC Address
+        :return: the new packed header
+        """
+        header = DHCPHeader(xid=xid, chaddr=mac_address.ljust(16, b'\x00'))
+        # Option 53: 1 (Discover)
+        options = self.create_option(53, b'\x01')
+        return header.pack(options)
+
+    def create_offer(self, xid: int, yiaddr: int, server_ip: int) -> bytes:
+        """
+        DHCPOFFER
+        :param xid: transaction id
+        :param yiaddr: you ip address
+        :param server_ip: server ip address
+        :return: the new packed header
+        """
+        header = DHCPHeader(op=2, xid=xid, yiaddr=yiaddr, siaddr=server_ip)
+        # Option 53: 2 (Offer)
+        options = self.create_option(53, b'\x02')
+        return header.pack(options)
+
+    def create_request(self, xid: int, requested_ip: int, mac_address: bytes) -> bytes:
+        """
+        DHCPREQUEST
+        :param xid: transaction id
+        :param requested_ip: requested ip
+        :param mac_address: MAC Address
+        :return: new packed header
+        """
+        header = DHCPHeader(xid=xid, chaddr=mac_address.ljust(16, b'\x00'))
+        # Option 53: 3 (Request) | Option 50: Requested IP
+        options = self.create_option(53, b'\x03') + \
+                  self.create_option(50, struct.pack("!L", requested_ip))
+        return header.pack(options)
+
+    def create_ack(self, xid: int, yiaddr: int, lease_time: int) -> bytes:
+        """
+        DHCPACK
+        :param xid: transaction id
+        :param yiaddr: your ip address
+        :param lease_time: lease time
+        :return: new packed header
+        """
+        header = DHCPHeader(op=2, xid=xid, yiaddr=yiaddr)
+        # Option 53: 5 (ACK) | Option 51: Lease Time
+        options = self.create_option(53, b'\x05') + \
+                  self.create_option(51, struct.pack("!L", lease_time))
+        return header.pack(options)
 
 
 
