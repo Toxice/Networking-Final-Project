@@ -161,7 +161,7 @@ class FTPClient:
 
                     if mode == "TCP":
                         self.receive_file_tcp(data_port, output_name)
-                    else:
+                    elif mode == "RUDP":
                         self.receive_file_rudp(data_port, output_name)
 
         except Exception as e:
@@ -187,7 +187,7 @@ class FTPClient:
         """קבלת קובץ ב-RUDP עם מד התקדמות (Progress Bar)"""
         print(f"Receiving via RUDP on port {data_port}...")
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client_sock:
-            client_sock.bind(("", 0))
+            client_sock.bind((self.assigned_ip, 0))
             client_sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024 * 1024)
 
             # שליחת ACK ראשוני
@@ -231,6 +231,7 @@ class FTPClient:
                     for i in sorted(received_packets.keys()):
                         f.write(received_packets[i])
                 print(f"File saved to {save_path}")
+
 
 
 if __name__ == "__main__":
