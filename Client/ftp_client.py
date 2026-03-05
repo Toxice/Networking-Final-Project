@@ -144,11 +144,11 @@ class FTPClient:
 
             if menu.get("type") == "MENU":
                 files = menu.get("files", [])
-                print("\n--- Available Music ---")
+                print("\n--- Available Files ---")
                 for i, f in enumerate(files):
                     print(f"{i + 1}. {f}")
 
-                choice = int(input("\nSelect song number: ")) - 1
+                choice = int(input("\nSelect file number: ")) - 1
                 selected_file = files[choice]
                 mode = input("Select transfer mode (TCP/RUDP): ").upper()
 

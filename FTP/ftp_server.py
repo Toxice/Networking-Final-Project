@@ -22,8 +22,10 @@ class FTPServer:
 
     def get_music_list(self):
         """סורק את התיקייה ומחזיר רשימה של עד 3 שירים"""
-        files = [f for f in os.listdir(self.music_dir) if f.endswith('.mp3')]
-        return files[:3]
+        valid_extensions = ('.mp3', '.jpg', '.JPG', '.jpeg', '.gif', '.mp4')
+
+        files = [f for f in os.listdir(self.music_dir) if f.endswith(valid_extensions)]
+        return files[:10]
 
     def start_server(self):
         # יצירת Socket לערוץ הבקרה (TCP)
