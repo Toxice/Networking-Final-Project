@@ -1,3 +1,4 @@
+import json
 import struct
 import socket
 from dns_server import *
@@ -27,20 +28,41 @@ class DNSHeader:
 
 #kind of מאגר שלנו
 class ZoneDatabase:
-    def __init__(self, name:str):
-        self.zone_name = name.lower().rstrip(".")
-        self.records = {
-            self.zone_name : "127.0.0.1",
-            "www." + self.zone_name : "127.0.0.2",
-            "mail." +  self.zone_name  : "127.0.0.3",
-            "ftp." +  self.zone_name  : "127.0.0.4",
-            "ns1." +  self.zone_name  : "127.0.0.5",
-            "pornhub." + self.zone_name : "66.254.114.41"
-        }
-        #SOA - start of authority
-        self.soa = {
-            "mname": "ns1." + self.zone_name, #primary nameserver
-            "rname": "hostmaster." + self.zone_name, #responsible email
+    def __init__(self, file_path="dns.json"):
+        self.file_path = file_path
+        self._load()
+
+        #self.name = None
+        #self.soa = None
+
+        #opeling a file with our database
+    def _load(self):
+        try:
+            with open(self.file_path,"r") as f:
+                self.database = json.load(f)
+        except FileNotFoundError:
+            self.database = {}
+
+    #writing python dict into the database.json
+    def _save(self):
+        with open(self.file_path,"w") as f:
+            json.dump(self.database, f, indent=4)
+
+
+
+
+    def extract_zone(self, domain):
+        parts = domain.lower().rstrip(".").split(".")
+        if len(parts) >= 2:
+            return ".".join(parts[-2:])
+        return domain
+
+    def get_soa(self, domain):
+        zone = self.extract_zone(domain)
+
+        return {
+            "mname": "ns1." + zone,
+            "rname": "hostmaster." + zone,
             "serial": 13121312,
             "refresh": 3600,
             "retry": 600,
@@ -48,23 +70,8 @@ class ZoneDatabase:
             "minimum": 300
         }
 
-    def get_soa(self):
-        return self.soa
-
-    #checking whether name is in records:
-    def is_in_zone(self, name):
-        normalized_name = name.lower().rstrip(".")
-        if normalized_name == self.zone_name:
-            return True
-        elif normalized_name.endswith( "." + self.zone_name):
-            return True
-        else:
-            return False
-    def get_name(self):
-        return self.zone_name
-
     def lookup(self, domain_name):
-        return self.records.get(domain_name.lower().rstrip("."))
+        return self.database.get(domain_name.lower().rstrip("."))
 
 class DNSQuestion:
 
