@@ -68,19 +68,16 @@ class DNSServer:
     def __init__(self, zone_database):
         self.zone_database = zone_database
 
-
     def handle_request(self, data):
-        #working with bad input
+
+        # invalid packet protection
         if data is None:
             return b''
-        if len(data) < 12:
-            if len(data) < 2:
-                return b''
-            else:
-                transaction_id = int.from_bytes(data[0:2],byteorder='big')
-                flags = (1 << 15) | 1  # QR=1, RCODE=1
-                return struct.pack("!HHHHHH", transaction_id, flags, 0, 0, 0, 0)
 
+        if len(data) < 12:
+            transaction_id = int.from_bytes(data[0:2], byteorder='big') if len(data) >= 2 else 0
+            flags = (1 << 15) | 1  # QR=1, RCODE=1 (Format Error)
+            return struct.pack("!HHHHHH", transaction_id, flags, 0, 0, 0, 0)
 
         try:
             builder = DNSResponseBuilder(data)
@@ -89,49 +86,45 @@ class DNSServer:
             qname = builder.qname
             qtype = builder.qtype
 
-            # 1. Authority check
-            #REFUSED -- not in out database
-            # we dont work with google.com
-            if not self.zone_database.is_in_zone(qname):
-                include_soa=False
-                rcode = 5
-                aa = 0 #authoritive answer
+            ip = self.zone_database.lookup(qname)
+            zone_name = self.zone_database.extract_zone(qname)
+
+            # Only support TYPE A
+            if qtype != 1:
+                include_soa = True
+                rcode = 0  # NOERROR (NODATA)
+                aa = 1
                 ip = None
-            #in the database
+
+            # A record exists
+            elif ip is not None:
+                include_soa = False
+                rcode = 0  # NOERROR
+                aa = 1
+
+            # Domain does not exist
             else:
-                #for any name inside our zone
-                # 2. Type check (only support A) ipv4
-                #we dont support AAAA ipv6
-                if qtype != 1:
-                    include_soa = True
-                    rcode = 0
-                    aa = 1
-                    ip = None
-
-                else:
-                    # we got example.com
-                    ip = self.zone_database.lookup(qname)
-
-                    #in our zone. NOERROR
-                    if ip is not None:
-                        include_soa = False
-                        rcode = 0
-                        aa = 1
-                    #NXDOMAIN
-                    else:
-                        include_soa = True
-                        rcode = 3
-                        aa = 1
+                include_soa = True
+                rcode = 3  # NXDOMAIN
+                aa = 1
 
             if include_soa:
-                soa_data = self.zone_database.get_soa()
+                soa_data = self.zone_database.get_soa(qname)
             else:
                 soa_data = None
 
-            return builder.build_response(aa, rcode, self.zone_database.get_name(),include_soa, ip, soa_data)
-        except ValueError:
+            return builder.build_response(
+                aa,
+                rcode,
+                zone_name,
+                include_soa,
+                ip,
+                soa_data
+            )
+
+        except Exception:
             transaction_id = int.from_bytes(data[0:2], byteorder='big')
-            flags = (1 << 15) | 1  # QR=1, RCODE=1
+            flags = (1 << 15) | 2  # QR=1, RCODE=2 (SERVFAIL)
             return struct.pack("!HHHHHH", transaction_id, flags, 0, 0, 0, 0)
 
 
@@ -140,7 +133,7 @@ if __name__ == "__main__":
     transport = UdpTransport("127.0.0.1", 8053)
     transport.initialize()
 
-    database = ZoneDatabase("example.com")
+    database = ZoneDatabase()
     server = DNSServer(database)
 
     while True:

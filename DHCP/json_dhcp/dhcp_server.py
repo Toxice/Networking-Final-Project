@@ -29,12 +29,6 @@ def parse_args() -> argparse.Namespace:
         default=10,
         help="Number of IPs to allocate (2–256, defaults to 10 if out of range).",
     )
-    parser.add_argument(
-        "--dns",
-        type=str,
-        default="127.0.0.1",
-        help="DNS IP address"
-    )
     return parser.parse_args()
 
 
@@ -50,7 +44,6 @@ def main():
     server = DHCPServer(
         ip_mask=args.ip_mask,
         allocation=args.allocation,
-        dns=args.dns
     )
     server.serve()
 

@@ -1,0 +1,13 @@
+{
+  "example.com": "127.0.0.1",
+  "www.example.com": "127.0.0.2",
+  "mail.example.com": "127.0.0.3",
+  "ftp.example.com": "127.0.0.4",
+  "ns1.example.com": "127.0.0.5",
+  "ariel.example.com": "127.0.0.6",
+  "pornhub.com": "66.254.114.41",
+  "www.pornhub.com": "66.254.114.42",
+  "google.com": "142.250.75.110",
+  "www.google.com": "142.250.75.111",
+  "ftp.google.com": "142.250.75.112"
+}
