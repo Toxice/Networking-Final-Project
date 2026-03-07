@@ -27,6 +27,7 @@ class DHCPClient:
 
             # Bind to the standardized client port
             sock.bind(('', CLIENT_PORT))
+            # server_addr = ('<broadcast>, SERVER_PORT)
             server_addr = ('127.0.0.1', SERVER_PORT)
 
             try:

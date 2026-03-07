@@ -44,7 +44,8 @@ class DHCPServer:
             # Windows approach: Bind to the IP address associated with the interface
             # On Windows, we bind to the specific local IP to lock the interface
             try:
-                sock.bind((self.server_ip, port))
+                # sock.bind((self.server_ip, port))
+                sock.bind(('127.0.0.1', port))
                 print(f"Windows: Bound to IP {self.server_ip} on interface {self.interface}")
             except Exception as e:
                 print(f"Windows Bind Error: {e}")
