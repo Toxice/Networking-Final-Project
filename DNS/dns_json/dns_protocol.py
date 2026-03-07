@@ -2,32 +2,45 @@ from dns_server import *
 import json
 
 
-#database
+#databasex
 class ZoneDatabase:
     #new def init:
-    def __init__(self):
-        self.database = {
-            "example.com": "127.0.0.1",
-            "www.example.com": "127.0.0.2",
-            "mail.example.com": "127.0.0.3",
-            "ftp.example.com": "127.0.0.4",
-            "ns1.example.com": "127.0.0.5",
-            "ariel.example.com": "127.0.0.6",
-            "pornhub.com": "66.254.114.41",
-            "www.pornhub.com": "66.254.114.42",
-            "google.com": "142.250.75.110",
-            "www.google.com": "142.250.75.111",
-            "ftp.google.com": "142.250.75.112"
-        }
+    def __init__(self, file_path="dns.json"):
+        self.file_path = file_path
+        self._load()
 
-    #adding new data into database
-    def add_record(self, url:str, ip:str):
-        self.database[url] = ip
+        # self.name = None
+        # self.soa = None
+
+        # opeling a file with our database
+
+    def _load(self):
+        try:
+            with open(self.file_path, "r") as f:
+                self.database = json.load(f)
+        except FileNotFoundError:
+            self.database = {}
+
+    # writing python dict into the database.json
+    def _save(self):
+        with open(self.file_path, "w") as f:
+            json.dump(self.database, f, indent=4)
+
+    # adding new data into database
+    def add_record(self, url: str, ip: str):
+        normalized = url.lower().rstrip(".")
+        # ipv4
+        try:
+            socket.inet_aton(ip)  # converting string into bytes
+        except OSError:  # catching errors
+            raise ValueError("invalid ipv4 address")
+
+        self.database[normalized] = ip
+        self._save()
 
     #checking whether name is in records:
     def is_in_zone(self, name):
         normalized_name = name.lower().rstrip(".")
-        #if normalized_name == self.zone_name:
         if normalized_name in self.database:
             return True
         elif normalized_name.endswith( "." + self.database.get(normalized_name)):

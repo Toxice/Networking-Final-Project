@@ -70,61 +70,79 @@ class DNSServer:
 
     def handle_request(self, data):
 
-        # invalid packet protection
         if data is None:
             return b''
 
+            # Reject oversized UDP packets (standard DNS limit = 512 bytes)
+        if len(data) > 512:
+            transaction_id = int.from_bytes(data[0:2], byteorder='big') if len(data) >= 2 else 0
+            flags = (1 << 15) | 1  # QR=1, RCODE=1 (FORMERR)
+            return struct.pack("!HHHHHH", transaction_id, flags, 0, 0, 0, 0)
+
         if len(data) < 12:
             transaction_id = int.from_bytes(data[0:2], byteorder='big') if len(data) >= 2 else 0
-            flags = (1 << 15) | 1  # QR=1, RCODE=1 (Format Error)
+            flags = (1 << 15) | 1  # FORMERR
             return struct.pack("!HHHHHH", transaction_id, flags, 0, 0, 0, 0)
 
         try:
             builder = DNSResponseBuilder(data)
             builder.parse_request()
 
-            qname = builder.qname
+            qname = builder.qname.lower().rstrip(".")
             qtype = builder.qtype
 
             ip = self.zone_database.lookup(qname)
-            zone_name = self.zone_database.extract_zone(qname)
 
-            # Only support TYPE A
+            # NOT authoritative → REFUSED
+            zone = self.zone_database.extract_zone(qname)
+
+            if zone not in self.zone_database.database:
+                # not authoritative
+                return builder.build_response(
+                    aa=0,
+                    rcode=5,  # REFUSED
+                    zone_name="",
+                    include_soa=False,
+                    ip=None,
+                    soa_data=None
+                )
+
+            # Only support A
             if qtype != 1:
-                include_soa = True
-                rcode = 0  # NOERROR (NODATA)
-                aa = 1
-                ip = None
+                return builder.build_response(
+                    aa=1,
+                    rcode=0,
+                    zone_name=self.zone_database.extract_zone(qname),
+                    include_soa=True,
+                    ip=None,
+                    soa_data=self.zone_database.get_soa(qname)
+                )
 
-            # A record exists
-            elif ip is not None:
-                include_soa = False
-                rcode = 0  # NOERROR
-                aa = 1
+            # Record exists
+            if ip:
+                return builder.build_response(
+                    aa=1,
+                    rcode=0,
+                    zone_name=self.zone_database.extract_zone(qname),
+                    include_soa=False,
+                    ip=ip,
+                    soa_data=None
+                )
 
-            # Domain does not exist
-            else:
-                include_soa = True
-                rcode = 3  # NXDOMAIN
-                aa = 1
-
-            if include_soa:
-                soa_data = self.zone_database.get_soa(qname)
-            else:
-                soa_data = None
-
+            # Inside zone but missing → NXDOMAIN
             return builder.build_response(
-                aa,
-                rcode,
-                zone_name,
-                include_soa,
-                ip,
-                soa_data
+                aa=1,
+                rcode=3,
+                zone_name=self.zone_database.extract_zone(qname),
+                include_soa=True,
+                ip=None,
+                soa_data=self.zone_database.get_soa(qname)
             )
 
-        except Exception:
+        except Exception as e:
+            print("ERROR:", e)  # <-- important for debugging
             transaction_id = int.from_bytes(data[0:2], byteorder='big')
-            flags = (1 << 15) | 2  # QR=1, RCODE=2 (SERVFAIL)
+            flags = (1 << 15) | 2  # SERVFAIL
             return struct.pack("!HHHHHH", transaction_id, flags, 0, 0, 0, 0)
 
 
