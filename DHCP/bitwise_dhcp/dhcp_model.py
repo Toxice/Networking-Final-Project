@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from typing import List, Dict
 
 """
+as mentioned at https://www.ietf.org/rfc/rfc2131.txt:
+
        0                   1                   2                   3
        0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -40,16 +42,16 @@ from typing import List, Dict
 
 @dataclass
 class DHCPPacket:
-    op: int = 1              # Operation Code | (1 for a REQUEST, 2 for a REPLY)
-    htype: int = 1           # Hardware address type |Default as 1 for Ethernet
-    hlen: int = 6            # Hardware address length | Default as 6 for MAC
-    hops: int = 0            # Number of Hops | Similar to how the IP protocol counts the number of hops from router to router
-    xid: int = 0             # Transaction ID | random number generated for maintaining the session
-    secs: int = 0            # Lease Time | number of seconds a client can hold an address
-    flags: int = 0           # Broadcast flag | Broadcast as 1, Unicast as 0
-    ciaddr: str = "0.0.0.0"  # Client IP
-    yiaddr: str = "0.0.0.0"  # 'Your' (client) IP
-    siaddr: str = "0.0.0.0"  # Next server IP
-    giaddr: str = "0.0.0.0"  # Relay agent IP
-    chaddr: str = ""         # Client hardware address (MAC)
+    op: int = 1               # 1 for Request (Client->Server), 2 for Reply (Server->Client)
+    htype: int = 1            # Ethernet
+    hlen: int = 6             # MAC length
+    hops: int = 0
+    xid: int = 0              # Transaction ID (must match across DORA)
+    secs: int = 0             # Lease Time | a time in seconds a client can hold an IP address
+    flags: int = 0x8000       # Broadcast flag (often required for clients without IPs)
+    ciaddr: str = "0.0.0.0"   # Client IP address | Redundant in Our Case
+    yiaddr: str = "0.0.0.0"   # Your IP Address | Client IP Address
+    siaddr: str = "0.0.0.0"   # Server IP Address
+    giaddr: str = "0.0.0.0"
+    chaddr: bytes = b''       # Binary MAC address
     options: Dict[int, bytes] = field(default_factory=dict)

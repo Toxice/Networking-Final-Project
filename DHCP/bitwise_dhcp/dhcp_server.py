@@ -1,47 +1,87 @@
-# dhcp_server.py
-
 import socket
 import argparse
-from dhcp_model import DHCPPacket
 import dhcp_protocol
-
+import sys
 
 class DHCPServer:
-    def __init__(self, ip_pool, subnet_mask):
-        self.ip_pool = ip_pool  # List of available IPs
-        self.subnet_mask = subnet_mask
-        self.leases = {}  # MAC -> IP mapping
+    def __init__(self, server_ip, interface, subnet_mask="255.255.255.0"):
+        self.server_ip = server_ip
+        self.interface = interface
+        self.subnet = subnet_mask
+        prefix = ".".join(server_ip.split('.')[:-1])
+        self.ip_pool = [f"{prefix}.{i}" for i in range(100, 201)]
 
-    def handle_discover(self, request_packet):
-        print(f"[*] Received DISCOVER from {request_packet.chaddr.hex(':')}")
-        # Logic: Pick an IP from pool, create OFFER packet
-        # ...
-        pass
+    def handle_packet(self, data):
+        pkt = dhcp_protocol.unpack_dhcp_packet(data)
+        msg_type = pkt.options.get(53)
 
-    def handle_request(self, request_packet):
-        print(f"[*] Received REQUEST for {request_packet.yiaddr}")
-        # Logic: Confirm lease, create ACK packet
-        # ...
-        pass
+        if msg_type == b'\x01':  # DISCOVER
+            offered_ip = self.ip_pool[0]
+            return dhcp_protocol.create_offer(pkt.xid, pkt.chaddr, offered_ip, self.server_ip)
 
-    def serve(self, interface_ip):
+        elif msg_type == b'\x03':  # REQUEST
+            req_ip = socket.inet_ntoa(pkt.options.get(50, b'\x00\x00\x00\x00'))
+            return dhcp_protocol.create_ack(pkt.xid, pkt.chaddr, req_ip, self.server_ip)
+        return None
+
+    def serve(self, port=6767):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.bind(('', 67))
 
-        print(f"Listening on port 67...")
+        # --- CROSS-PLATFORM INTERFACE LOGIC ---
+        if sys.platform.startswith('linux'):
+            try:
+                # Linux approach: Bind directly to the hardware name
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, self.interface.encode())
+                print(f"Linux: Bound to interface {self.interface}")
+            except PermissionError:
+                print("Permission denied: DHCP servers require sudo on Linux.")
+
+        elif sys.platform == 'win32':
+            # Windows approach: Bind to the IP address associated with the interface
+            # On Windows, we bind to the specific local IP to lock the interface
+            try:
+                sock.bind((self.server_ip, port))
+                print(f"Windows: Bound to IP {self.server_ip} on interface {self.interface}")
+            except Exception as e:
+                print(f"Windows Bind Error: {e}")
+                sock.bind(('', port))  # Fallback to all interfaces
+
+        # Final fallback/default bind for non-Windows or if Linux binding failed
+        if sys.platform != 'win32':
+            sock.bind(('', port))
+
+        print(f"DHCP Server active. Serving pool: {self.ip_pool[0]}-{self.ip_pool[-1]}")
         while True:
             data, addr = sock.recvfrom(1024)
-            # Basic logic to parse 'data' into DHCPPacket and route to handlers
-            # ...
+            response = self.handle_packet(data)
+            if response:
+                # sock.sendto(response, ('<broadcast>', 6868))
+                sock.sendto(response, ('127.0.0.1', 6868))
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Python DHCP Server")
-    parser.add_argument("--pool", nargs='+', required=True, help="IP pool range")
-    parser.add_argument("--mask", default="255.255.255.0", help="Subnet mask")
-    args = parser.parse_args()
+    if __name__ == "__main__":
+        def get_local_ip():
+            """Automatically detect the IP of the default interface."""
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            try:
+                # Doesn't actually connect, just triggers the OS to pick an interface
+                s.connect(('8.8.8.8', 80))
+                return s.getsockname()[0]
+            except Exception:
+                return "192.168.1.1"  # Total fallback
+            finally:
+                s.close()
 
-    server = DHCPServer(args.pool, args.mask)
-    server.serve("0.0.0.0")
+
+        parser = argparse.ArgumentParser(description="DHCP Server")
+        # If the user doesn't provide --ip, get_local_ip() runs automatically
+        parser.add_argument("--ip", default=get_local_ip(), help="The Base IP for the server")
+        parser.add_argument("--interface", default="eth0", help="Interface name")
+
+        args = parser.parse_args()
+        print(f"Using Base IP: {args.ip}")  # Confirms what was chosen
+        server = DHCPServer(args.ip, args.interface)
+        server.serve()
