@@ -40,7 +40,7 @@ class ZoneDatabase:
         try:
             with open(self.file_path,"r") as f:
                 self.database = json.load(f)
-        except FileNotFoundError:
+        except (FileNotFoundError, json.JSONDecodeError):
             self.database = {}
 
     #writing python dict into the database.json
@@ -133,6 +133,11 @@ class DNSResponseBuilder:
     def parse_request(self):
         self.transaction_id = int.from_bytes(self.request_data[0:2], byteorder='big')
         self.flags = int.from_bytes(self.request_data[2:4], byteorder='big')
+        # Validate QDCOUNT
+        qdcount = int.from_bytes(self.request_data[4:6], byteorder='big')
+        if qdcount != 1:
+            raise ValueError("Only single-question queries supported")
+
         question = DNSQuestion(self.request_data)
         self.qname, self.qtype, self.qclass, self.offset = question.parse_question(12)
 
@@ -187,7 +192,10 @@ class DNSResponseBuilder:
             aclass = 1
             attl = 300
             ardlength = 4
-            ardata = socket.inet_aton(ip)
+            try:
+                ardata = socket.inet_aton(ip)
+            except OSError:
+                return b''
 
             answer = struct.pack(
                 "!HHHLH4s",
@@ -218,6 +226,10 @@ class DNSResponseBuilder:
 
     # building soa itself. we have 5 fixed size integers + dynamic mname and rname
     def build_soa_record(self, soa_dict, zone_name):
+        # Prevent empty zone producing root SOA
+        if not zone_name:
+            return b''
+
         soa_ints = struct.pack("!IIIII", soa_dict.get("serial"),
                                soa_dict.get("refresh"),
                                soa_dict.get("retry"),
