@@ -40,6 +40,10 @@ as mentioned at https://www.ietf.org/rfc/rfc2131.txt:
 
 """
 
+# Hardcoded ports for this custom implementation
+SERVER_PORT = 6767
+CLIENT_PORT = 6868
+
 @dataclass
 class DHCPPacket:
     op: int = 1               # 1 for Request (Client->Server), 2 for Reply (Server->Client)

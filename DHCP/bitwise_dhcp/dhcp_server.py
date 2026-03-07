@@ -3,6 +3,8 @@ import argparse
 import dhcp_protocol
 import sys
 
+from dhcp_model import SERVER_PORT, CLIENT_PORT
+
 class DHCPServer:
     def __init__(self, server_ip, interface, subnet_mask="255.255.255.0"):
         self.server_ip = server_ip
@@ -24,7 +26,7 @@ class DHCPServer:
             return dhcp_protocol.create_ack(pkt.xid, pkt.chaddr, req_ip, self.server_ip)
         return None
 
-    def serve(self, port=6767):
+    def serve(self, port=SERVER_PORT):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -57,8 +59,8 @@ class DHCPServer:
             data, addr = sock.recvfrom(1024)
             response = self.handle_packet(data)
             if response:
-                # sock.sendto(response, ('<broadcast>', 6868))
-                sock.sendto(response, ('127.0.0.1', 6868))
+                # sock.sendto(response, ('<broadcast>', CLIENT_PORT))
+                sock.sendto(response, ('127.0.0.1', CLIENT_PORT))
 
 
 if __name__ == "__main__":
