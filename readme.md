@@ -26,7 +26,7 @@
 ### FTP Server:
 * `ftp_server.py` - FTP Server class
 
-### since FTP is basically a text based application protocol, there is no need to a fancy 3 class based architecture, one class is enough
+#### since FTP is basically a text based application protocol, there is no need to a fancy 3 class based architecture, one class is enough
 
 ---
 
