@@ -1,6 +1,6 @@
 ### Networking Project
 
-![](https://img.shields.io/badge/Contributer-Liza_Bahak-green) ![](https://img.shields.io/badge/Contributer-Nicko_Korgan-green) ![](https://img.shields.io/badge/Contributer-Mor_Romano-green)
+[![Contributor](https://img.shields.io/badge/Contributor-Liza_Bahak-green)](https://github.com/LizPlzArt) [![Contributor](https://img.shields.io/badge/Contributor-Nicko_Korgan-green)](https://github.com/jaoniko18) [![Contributor](https://img.shields.io/badge/Contributor-Mor_Romano-green)](https://github.com/Toxice) 
 
 [![Trello](https://shields.io/badge/Project_Track-Trello-purple?logo=Trello&style=flat)](https://trello.com/b/KPWm4q41/network-final-assignment)
 
