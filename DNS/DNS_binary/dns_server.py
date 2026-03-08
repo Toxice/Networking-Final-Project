@@ -26,13 +26,17 @@ class UdpTransport:
         self.sock.bind((self.host, self.port))
         self.sock.settimeout(self.timeout)
         self.running = True
+        print("[DNS]")
         print(f"UDP server running on {self.host}:{self.port}")
 
     def receive(self):
         try:
             data, addr = self.sock.recvfrom(self.buffer_size) #raw bytes of data + addr of sender in a tuple
+            print("[DNS]")
+            print(f"Request received")
             #simulation incoming packet loss
             if random.random() < self.receive_loss_rate:
+                print("[DNS]")
                 print("Dropped incoming packet")
                 return None, None
             if self.artificial_delay_ms > 0:
@@ -41,11 +45,13 @@ class UdpTransport:
         except socket.timeout:
             return None, None
         except Exception as e:
+            print("[DNS]")
             print(f"Receive error: {e}")
             return None, None
 
     def send(self, data, addr):
         if random.random() < self.send_loss_rate:
+            print("[DNS]")
             print("Dropped outgoing packet")
             return
         if self.artificial_delay_ms > 0:
@@ -53,7 +59,10 @@ class UdpTransport:
         try:
             self.sock.sendto(data, addr)
         except Exception as e:
+            print("[DNS]")
             print(f"Send error: {e}")
+        print("[DNS]")
+        print("Response sent")
 
     def close(self):
         self.running = False
@@ -140,6 +149,7 @@ class DNSServer:
             )
 
         except Exception as e:
+            print("[DNS]")
             print("ERROR:", e)  # <-- important for debugging
             transaction_id = int.from_bytes(data[0:2], byteorder='big')
             flags = (1 << 15) | 2  # SERVFAIL
@@ -148,6 +158,7 @@ class DNSServer:
 
 
 if __name__ == "__main__":
+    print("[DNS]")
     transport = UdpTransport("127.0.0.1", 8053)
     transport.initialize()
 

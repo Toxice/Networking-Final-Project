@@ -83,6 +83,8 @@ class DNSQuestion:
         self.raw_data = raw_data
 
     def parse_question(self,start_index):
+        print("[DNS]")
+        print("Parsing question")
         #qname
         labels  = []
         found_terminator = False
@@ -134,6 +136,8 @@ class DNSResponseBuilder:
 
     # same parsing as in question
     def parse_request(self):
+        print("[DNS]")
+        print("Parsing request")
         self.transaction_id = int.from_bytes(self.request_data[0:2], byteorder='big')
         self.flags = int.from_bytes(self.request_data[2:4], byteorder='big')
         # Validate QDCOUNT
@@ -146,6 +150,8 @@ class DNSResponseBuilder:
 
     # building dns header for response
     def build_header(self, ancount, rcode, aa, nscount):
+        print("[DNS]")
+        print("Building header")
         # Extract RD from request (bit 8)
         rd = (self.flags >> 8) & 1
         # Build flags from scratch
@@ -179,6 +185,8 @@ class DNSResponseBuilder:
     # copying question section. this section must match the request exactly
     # if client asked example.com TYPE A CLASS IN we are to copy this!
     def build_question_section(self):
+        print("[DNS]")
+        print("Building question section ")
         return self.request_data[12:self.offset]
 
     # building full structure for answer
@@ -229,6 +237,8 @@ class DNSResponseBuilder:
 
     # building soa itself. we have 5 fixed size integers + dynamic mname and rname
     def build_soa_record(self, soa_dict, zone_name):
+        print("[DNS]")
+        print("Building soa record ")
         # Prevent empty zone producing root SOA
         if not zone_name:
             return b''
@@ -256,6 +266,8 @@ class DNSResponseBuilder:
         # HEADER|QUESTION|ANSWER|AUTHORITY|ADDITIONAL(dont have)
 
     def build_response(self, aa, rcode, zone_name, include_soa=False, ip=None, soa_data=None):
+        print("[DNS]")
+        print("Building response")
         self.parse_request()
 
         question = self.build_question_section()

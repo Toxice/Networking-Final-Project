@@ -33,6 +33,7 @@ class ZoneDatabase:
         try:
             socket.inet_aton(ip)  # converting string into bytes
         except OSError:  # catching errors
+            print("[DNS]")
             raise ValueError("invalid ipv4 address")
 
         self.database[normalized] = ip
@@ -53,8 +54,10 @@ def resolve_request(database: ZoneDatabase, request_dict):
         query_url = request_dict.get("url")
         query_ip = request_dict.get("ip")
         if not isinstance(query_url, str) or not isinstance(query_ip, str): #checking whether query_url is str
+            print("[DNS]")
             return {"error": "Invalid field types"}
         if not query_ip or not query_url:
+            print("[DNS]")
             print("Wrong request format")
             return {"error": "Invalid request format"}
         database.add_record(query_url, query_ip)
@@ -63,6 +66,7 @@ def resolve_request(database: ZoneDatabase, request_dict):
     elif "url" in request_dict:
         query_url = request_dict.get("url")
         if not isinstance(query_url, str):
+            print("[DNS]")
             return {"error": "Invalid url type"}
         if not query_url:
             return {"ip": None}
@@ -76,6 +80,7 @@ def resolve_request(database: ZoneDatabase, request_dict):
         else:
             return {"ip": None}
     else:
+        print("[DNS]")
         print("ERROR")
         return {"error": "Invalid request format"}
 
@@ -87,6 +92,7 @@ class json_dns_server:
     def handle(self, raw_data):
         #checking correct size of data
         if len(raw_data) == 1024:
+            print("[DNS]")
             return json.dumps({"error": "Payload too large"}).encode("utf8")
         if len(raw_data) == 0:
             return b''
@@ -97,6 +103,7 @@ class json_dns_server:
             final_data = json.dumps(resolved_data).encode("utf8")  # string -> bytes + encoding
             return final_data
         except Exception as e:
+            print("[DNS]")
             print("ERROR:", e)
             return json.dumps({"error": "Server error"}).encode("utf8")
 
