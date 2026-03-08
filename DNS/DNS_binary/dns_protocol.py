@@ -26,28 +26,27 @@ class DNSHeader:
         self.z = (self.flags >> 4) & 0b111
         self.rcode = self.flags & 0b1111
 
-#kind of database
+#kind of מאגר שלנו
 class ZoneDatabase:
     def __init__(self, file_path="dns.json"):
         self.file_path = file_path
         self._load()
 
-        # Build authoritative zones set
-        self.zones = set()
-        for domain in self.database.keys():
-            self.zones.add(self.extract_zone(domain))
-
+        #self.name = None
+        #self.soa = None
 
         #opeling a file with our database
     def _load(self):
+        print("[DNS] loading from database...")
         try:
             with open(self.file_path,"r") as f:
                 self.database = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
+        except FileNotFoundError:
             self.database = {}
 
     #writing python dict into the database.json
     def _save(self):
+        print("[DNS] saving to database...")
         with open(self.file_path,"w") as f:
             json.dump(self.database, f, indent=4)
 
@@ -83,6 +82,7 @@ class DNSQuestion:
         self.raw_data = raw_data
 
     def parse_question(self,start_index):
+        print("[DNS] parsing question...")
         #qname
         labels  = []
         found_terminator = False
@@ -134,18 +134,15 @@ class DNSResponseBuilder:
 
     # same parsing as in question
     def parse_request(self):
+        print("[DNS] parsing request...")
         self.transaction_id = int.from_bytes(self.request_data[0:2], byteorder='big')
         self.flags = int.from_bytes(self.request_data[2:4], byteorder='big')
-        # Validate QDCOUNT
-        qdcount = int.from_bytes(self.request_data[4:6], byteorder='big')
-        if qdcount != 1:
-            raise ValueError("Only single-question queries supported")
-
         question = DNSQuestion(self.request_data)
         self.qname, self.qtype, self.qclass, self.offset = question.parse_question(12)
 
     # building dns header for response
     def build_header(self, ancount, rcode, aa, nscount):
+        print("[DNS] building header...")
         # Extract RD from request (bit 8)
         rd = (self.flags >> 8) & 1
         # Build flags from scratch
@@ -179,6 +176,7 @@ class DNSResponseBuilder:
     # copying question section. this section must match the request exactly
     # if client asked example.com TYPE A CLASS IN we are to copy this!
     def build_question_section(self):
+        print("[DNS] building question section...")
         return self.request_data[12:self.offset]
 
     # building full structure for answer
@@ -195,10 +193,7 @@ class DNSResponseBuilder:
             aclass = 1
             attl = 300
             ardlength = 4
-            try:
-                ardata = socket.inet_aton(ip)
-            except OSError:
-                return b''
+            ardata = socket.inet_aton(ip)
 
             answer = struct.pack(
                 "!HHHLH4s",
@@ -230,10 +225,7 @@ class DNSResponseBuilder:
 
     # building soa itself. we have 5 fixed size integers + dynamic mname and rname
     def build_soa_record(self, soa_dict, zone_name):
-        # Prevent empty zone producing root SOA
-        if not zone_name:
-            return b''
-
+        print("[DNS] building soa section...")
         soa_ints = struct.pack("!IIIII", soa_dict.get("serial"),
                                soa_dict.get("refresh"),
                                soa_dict.get("retry"),
@@ -257,24 +249,29 @@ class DNSResponseBuilder:
         # HEADER|QUESTION|ANSWER|AUTHORITY|ADDITIONAL(dont have)
 
     def build_response(self, aa, rcode, zone_name, include_soa=False, ip=None, soa_data=None):
+        print("[DNS] building response...")
         self.parse_request()
+
+        # working with soa for NXDOMAIN AND NODATA
+        if include_soa:
+            nscount = 1
+            authority = self.build_soa_record(soa_data, zone_name)
+        else:
+            nscount = 0
+            authority = b''
+
+        if ip is not None:
+            ancount = 1
+        else:
+            ancount = 0
 
         question = self.build_question_section()
         answer = self.build_answer_section(ip)
 
-        # Only count answer if actually built
-        ancount = 1 if answer else 0
-
-        if include_soa and soa_data:
-            authority = self.build_soa_record(soa_data, zone_name)
-            nscount = 1 if authority else 0
-        else:
-            authority = b''
-            nscount = 0
-
         header = self.build_header(ancount, rcode, aa, nscount)
 
         return header + question + answer + authority
+
 
 
 
