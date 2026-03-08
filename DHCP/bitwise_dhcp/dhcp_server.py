@@ -20,13 +20,13 @@ class DHCPServer:
         match msg_type:
             case DHCPState.DISCOVER:
                 offered_ip = self.ip_pool[0]
-                print("[DHCP] DISCOVER detected")
+                print("[DHCP] OFFER")
                 print(f"[DHCP] xid: {pkt.xid} | offered ip: {offered_ip}")
                 return dhcp_protocol.create_offer(pkt.xid, pkt.chaddr, offered_ip, self.server_ip)
 
             case DHCPState.REQUEST:
                 req_ip = socket.inet_ntoa(pkt.options.get(50, b'\x00\x00\x00\x00'))
-                print("[DHCP] REQUEST detected")
+                print("[DHCP] ACK")
                 print(f"[DHCP] xid: {pkt.xid} | offered ip: {req_ip}")
                 return dhcp_protocol.create_ack(pkt.xid, pkt.chaddr, req_ip, self.server_ip)
 

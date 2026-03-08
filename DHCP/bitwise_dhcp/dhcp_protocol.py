@@ -52,7 +52,7 @@ def unpack_dhcp_packet(data: bytes) -> DHCPPacket:
 
 dns_ip = __get_dns()
 
-# Factory functions for DORA
+# Factory functions for the D.O.R.A process
 
 def create_discover(xid, mac_bin):
     p = DHCPPacket(xid=xid, chaddr=mac_bin)

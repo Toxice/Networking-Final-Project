@@ -67,6 +67,13 @@ class DHCPClient:
                 else:
                     print("[-] DHCP NAK received or invalid response.")
 
+                # Extract DNS from the options dictionary (Option 6)
+                dns_bytes = ack_pkt.options.get(6)
+                if dns_bytes:
+                    dns_str = socket.inet_ntoa(dns_bytes)
+                    print(f"DNS Server: {dns_str}")
+                else:
+                    print("DNS Server: Not provided by server")
             except socket.timeout:
                 print("[-] Error: No response from DHCP server (Timeout).")
 
