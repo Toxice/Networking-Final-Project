@@ -148,7 +148,7 @@ class FTPClient:
                 for i, f in enumerate(files):
                     print(f"{i + 1}. {f}")
 
-                choice = int(input("\nSelect file number: ")) - 1
+                choice = int(input("\nSelect file n`umber: ")) - 1
                 selected_file = files[choice]
                 mode = input("Select transfer mode (TCP/RUDP): ").upper()
 
