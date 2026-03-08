@@ -50,8 +50,8 @@ class ZoneDatabase:
 
 
 
-
-    def extract_zone(self, domain):
+    @staticmethod
+    def extract_zone(domain):
         parts = domain.lower().rstrip(".").split(".")
         if len(parts) >= 2:
             return ".".join(parts[-2:])
@@ -204,7 +204,8 @@ class DNSResponseBuilder:
             return b''  # empty bytes object
 
     # function to encode dns name to format b'\x03ns1\x07example\x03com\x00
-    def encode_dns_name(self, dns_name):
+    @staticmethod
+    def encode_dns_name(dns_name):
         dns_name = dns_name.lower().rstrip(".")
         labels = dns_name.split('.')
 
