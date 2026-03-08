@@ -33,6 +33,12 @@
 ### Client:
 * `ftp_client.py` - unified client, made to work with DHCP, DNS and FTP Servers
 
+---
+
+### Dissectors:
+* since we made a custom FTP over JSON and not the RFC one, we made a Lua dissector for Wireshark, can be found in Dissectors/Custom FTP
+* the protocol is named FOJP (File transfer Over JSON Protocol) `fojp.lua`
+
 ### Bibliography:
 [![Google Docs](https://img.shields.io/badge/DHCP-RFC2121-4285F4?style=for-the-badge&logo=googledocs&logoColor=white)](https://www.ietf.org/rfc/rfc2131.txt)
 [![Google Docs](https://img.shields.io/badge/DNS-RFC1035-4285F4?style=for-the-badge&logo=googledocs&logoColor=white)](https://www.ietf.org/rfc/rfc1035.txt)
