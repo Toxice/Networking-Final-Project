@@ -201,11 +201,7 @@ class FTPClient:
             try:
                 while True:
                     data, addr = client_sock.recvfrom(BUFFER_SIZE)
-                    if data == b"DONE":
-                        if len(received_packets) == total_expected and total_expected > 0:
-                            break
-                        else:
-                            continue
+                    if data == b"DONE": break
 
                     if len(data) >= 8:
                         p_num, total_expected = struct.unpack("!II", data[:8])
