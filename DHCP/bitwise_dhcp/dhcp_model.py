@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from typing import List, Dict
+import enum
 
 """
 as mentioned at https://www.ietf.org/rfc/rfc2131.txt:
@@ -59,3 +60,9 @@ class DHCPPacket:
     giaddr: str = "0.0.0.0"
     chaddr: bytes = b''       # Binary MAC address
     options: Dict[int, bytes] = field(default_factory=dict)
+
+class DHCPState(bytes, enum.Enum):
+    DISCOVER = b'\x01'
+    OFFER = b'\x02'
+    REQUEST = b'\x03'
+    ACK = b'\x05'

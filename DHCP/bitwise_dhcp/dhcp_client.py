@@ -2,7 +2,7 @@ import socket
 import uuid
 import random
 import dhcp_protocol
-from dhcp_model import SERVER_PORT, CLIENT_PORT
+from dhcp_model import SERVER_PORT, CLIENT_PORT, DHCPState
 
 
 class DHCPClient:
@@ -11,14 +11,14 @@ class DHCPClient:
         self.xid = random.randint(0, 0xFFFFFFFF)
         self.mac_addr = self._get_mac_binary()
 
-    def _get_mac_binary(self) -> bytes:
+    @staticmethod
+    def _get_mac_binary() -> bytes:
         """Extracts the local hardware MAC address as 6 bytes."""
         node = uuid.getnode()
         return node.to_bytes(6, 'big')
 
     def run_dora(self):
         """Executes the DORA exchange using dhcp_protocol factory methods."""
-
         # Initialize UDP socket for broadcast-style communication
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -61,7 +61,7 @@ class DHCPClient:
                 data, _ = sock.recvfrom(1024)
                 ack_pkt = dhcp_protocol.unpack_dhcp_packet(data)
 
-                if ack_pkt.options.get(53) == b'\x05':
+                if ack_pkt.options.get(53) == DHCPState.ACK:
                     print(f"[SUCCESS] Leased IP: {ack_pkt.yiaddr}")
                     print(f"Server Identifier: {ack_pkt.siaddr}")
                 else:

@@ -1,8 +1,20 @@
 import struct
 import socket
-from dhcp_model import DHCPPacket
+from pathlib import Path
+
+from dhcp_model import DHCPPacket, DHCPState
+import json
 
 MAGIC_COOKIE = b'\x63\x82\x53\x63'
+
+BASE_DIR = Path(__file__).resolve().parent
+
+dhcp_config = BASE_DIR / 'dhcp.json'
+
+def __get_dns() -> str:
+    with open(dhcp_config, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+        return data.get('dns_ip')
 
 def pack_dhcp_packet(packet: DHCPPacket) -> bytes:
     header = struct.pack(
@@ -38,23 +50,31 @@ def unpack_dhcp_packet(data: bytes) -> DHCPPacket:
         offset += 2 + length
     return pkt
 
+dns_ip = __get_dns()
+
 # Factory functions for DORA
 
 def create_discover(xid, mac_bin):
-    p = DHCPPacket(xid=xid, chaddr=mac_bin); p.options[53] = b'\x01'
+    p = DHCPPacket(xid=xid, chaddr=mac_bin)
+    p.options[53] = DHCPState.DISCOVER
     return pack_dhcp_packet(p)
 
 def create_offer(xid, mac_bin, yiaddr, siaddr):
     p = DHCPPacket(op=2, xid=xid, chaddr=mac_bin, yiaddr=yiaddr, siaddr=siaddr)
-    p.options[53] = b'\x02'; p.options[54] = socket.inet_aton(siaddr)
+    p.options[6] = socket.inet_aton(dns_ip)
+    p.options[53] = DHCPState.OFFER
+    p.options[54] = socket.inet_aton(siaddr)
     return pack_dhcp_packet(p)
 
 def create_request(xid, mac_bin, requested_ip, siaddr):
-    p = DHCPPacket(xid=xid, chaddr=mac_bin); p.options[53] = b'\x03'
+    p = DHCPPacket(xid=xid, chaddr=mac_bin)
+    p.options[53] = DHCPState.REQUEST
     p.options[50] = socket.inet_aton(requested_ip); p.options[54] = socket.inet_aton(siaddr)
     return pack_dhcp_packet(p)
 
 def create_ack(xid, mac_bin, yiaddr, siaddr):
     p = DHCPPacket(op=2, xid=xid, chaddr=mac_bin, yiaddr=yiaddr, siaddr=siaddr)
-    p.options[53] = b'\x05'; p.options[54] = socket.inet_aton(siaddr)
+    p.options[6] = socket.inet_aton(dns_ip)
+    p.options[53] = DHCPState.ACK
+    p.options[54] = socket.inet_aton(siaddr)
     return pack_dhcp_packet(p)
