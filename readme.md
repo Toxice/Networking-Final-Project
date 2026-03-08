@@ -1,13 +1,16 @@
-### Networking Project - Liza Bahak | Nicko Korgan | Mor Romano
+### Networking Project
 
-* This Project consists of 3 Parts:
+![](https://img.shields.io/badge/Contributer-Liza_Bahak-green) ![](https://img.shields.io/badge/Contributer-Nicko_Korgan-green) ![](https://img.shields.io/badge/Contributer-Mor_Romano-green)
+
+[![Trello](https://shields.io/badge/Project_Track-Trello-purple?logo=Trello&style=flat)](https://trello.com/b/KPWm4q41/network-final-assignment)
+
+### This Project consists of 3 Parts:
 * Custom FTP Server
 * DHCP Server
 * DNS Server
 ---
 ## Architecture & Components:
 
----
 
 ### DNS Server:
 * `dns_protocol.py` - struct packing & unpacking and DNS methods
@@ -30,6 +33,7 @@
 ### Client:
 * `ftp_client.py` - unified client, made to work with DHCP, DNS and FTP Servers
 
-## Bibliography:
-* [DHCP RFC](https://www.ietf.org/rfc/rfc2131.txt)
-
+### Bibliography:
+[![Google Docs](https://img.shields.io/badge/DHCP-RFC2121-4285F4?style=for-the-badge&logo=googledocs&logoColor=white)](https://www.ietf.org/rfc/rfc2131.txt)
+[![Google Docs](https://img.shields.io/badge/DNS-RFC1035-4285F4?style=for-the-badge&logo=googledocs&logoColor=white)](https://www.ietf.org/rfc/rfc1035.txt)
+[![Google Docs](https://img.shields.io/badge/FTP-RFC959-4285F4?style=for-the-badge&logo=googledocs&logoColor=white)](https://www.ietf.org/rfc/rfc959.txt)
