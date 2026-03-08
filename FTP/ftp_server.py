@@ -11,8 +11,8 @@ class FTPServer:
         self.host = host
         self.control_port = 2121
         self.music_dir = "server_music"  # התיקייה עם השירים
-        self.max_msg_size = 30000  # גודל חבילה ל-RUDP
-        self.sliding_window = 5  # גודל חלון
+        self.max_msg_size = 1450  # גודל חבילה ל-RUDP
+        self.sliding_window = 10  # גודל חלון
         self.timeout = 2.0  # זמן המתנה ל-ACK
 
         # יצירת התיקייה אם היא לא קיימת
