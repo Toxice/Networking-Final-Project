@@ -18,9 +18,9 @@
 ---
 
 ### DHCP Server:
-* `dhcp_model.py` - python dataclass, used as a base for abstraction in the byte to class process
-* `dhcp_protocol.py` - used for all struct packing & unpacking, all DHCP methods are based here
-* `dhcp_server.py` - actual DHCP server
+* `dhcp_model.py` - python dataclass, used as  an abstraction layer from the bits representation to a class
+* `dhcp_protocol.py` - used for struct packing & unpackin and all DHCP DORA process methods
+* `dhcp_server.py` - the actual DHCP server
 ---
 
 ### FTP Server:
