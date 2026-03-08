@@ -26,14 +26,17 @@ class DNSHeader:
         self.z = (self.flags >> 4) & 0b111
         self.rcode = self.flags & 0b1111
 
-#kind of מאגר שלנו
+#kind of database
 class ZoneDatabase:
     def __init__(self, file_path="dns.json"):
         self.file_path = file_path
         self._load()
 
-        #self.name = None
-        #self.soa = None
+        # Build authoritative zones set
+        self.zones = set()
+        for domain in self.database.keys():
+            self.zones.add(self.extract_zone(domain))
+
 
         #opeling a file with our database
     def _load(self):
@@ -255,26 +258,22 @@ class DNSResponseBuilder:
     def build_response(self, aa, rcode, zone_name, include_soa=False, ip=None, soa_data=None):
         self.parse_request()
 
-        # working with soa for NXDOMAIN AND NODATA
-        if include_soa:
-            nscount = 1
-            authority = self.build_soa_record(soa_data, zone_name)
-        else:
-            nscount = 0
-            authority = b''
-
-        if ip is not None:
-            ancount = 1
-        else:
-            ancount = 0
-
         question = self.build_question_section()
         answer = self.build_answer_section(ip)
+
+        # Only count answer if actually built
+        ancount = 1 if answer else 0
+
+        if include_soa and soa_data:
+            authority = self.build_soa_record(soa_data, zone_name)
+            nscount = 1 if authority else 0
+        else:
+            authority = b''
+            nscount = 0
 
         header = self.build_header(ancount, rcode, aa, nscount)
 
         return header + question + answer + authority
-
 
 
 
