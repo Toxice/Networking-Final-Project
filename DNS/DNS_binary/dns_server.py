@@ -96,7 +96,7 @@ class DNSServer:
             # NOT authoritative → REFUSED
             zone = self.zone_database.extract_zone(qname)
 
-            if zone not in self.zone_database.database:
+            if zone not in self.zone_database.zones:
                 # not authoritative
                 return builder.build_response(
                     aa=0,
