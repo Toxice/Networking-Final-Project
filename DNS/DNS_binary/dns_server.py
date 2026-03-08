@@ -26,7 +26,7 @@ class UdpTransport:
         self.sock.bind((self.host, self.port))
         self.sock.settimeout(self.timeout)
         self.running = True
-        print(f"DNS server running on {self.host}:{self.port}")
+        print(f"[DNS] server running on {self.host}:{self.port}")
 
     def receive(self):
         try:
@@ -45,6 +45,8 @@ class UdpTransport:
             return None, None
 
     def send(self, data, addr):
+        print("[DNS] sent response")
+
         if random.random() < self.send_loss_rate:
             print("Dropped outgoing packet")
             return
@@ -69,6 +71,7 @@ class DNSServer:
         self.zone_database = zone_database
 
     def handle_request(self, data):
+        print("[DNS] received query")
 
         # invalid packet protection
         if data is None:

@@ -37,6 +37,7 @@ class ZoneDatabase:
 
         #opeling a file with our database
     def _load(self):
+        print("[DNS] loading from database...")
         try:
             with open(self.file_path,"r") as f:
                 self.database = json.load(f)
@@ -45,6 +46,7 @@ class ZoneDatabase:
 
     #writing python dict into the database.json
     def _save(self):
+        print("[DNS] saving to database...")
         with open(self.file_path,"w") as f:
             json.dump(self.database, f, indent=4)
 
@@ -80,6 +82,7 @@ class DNSQuestion:
         self.raw_data = raw_data
 
     def parse_question(self,start_index):
+        print("[DNS] parsing question...")
         #qname
         labels  = []
         found_terminator = False
@@ -131,6 +134,7 @@ class DNSResponseBuilder:
 
     # same parsing as in question
     def parse_request(self):
+        print("[DNS] parsing request...")
         self.transaction_id = int.from_bytes(self.request_data[0:2], byteorder='big')
         self.flags = int.from_bytes(self.request_data[2:4], byteorder='big')
         question = DNSQuestion(self.request_data)
@@ -138,6 +142,7 @@ class DNSResponseBuilder:
 
     # building dns header for response
     def build_header(self, ancount, rcode, aa, nscount):
+        print("[DNS] building header...")
         # Extract RD from request (bit 8)
         rd = (self.flags >> 8) & 1
         # Build flags from scratch
@@ -171,6 +176,7 @@ class DNSResponseBuilder:
     # copying question section. this section must match the request exactly
     # if client asked example.com TYPE A CLASS IN we are to copy this!
     def build_question_section(self):
+        print("[DNS] building question section...")
         return self.request_data[12:self.offset]
 
     # building full structure for answer
@@ -219,6 +225,7 @@ class DNSResponseBuilder:
 
     # building soa itself. we have 5 fixed size integers + dynamic mname and rname
     def build_soa_record(self, soa_dict, zone_name):
+        print("[DNS] building soa section...")
         soa_ints = struct.pack("!IIIII", soa_dict.get("serial"),
                                soa_dict.get("refresh"),
                                soa_dict.get("retry"),
@@ -242,6 +249,7 @@ class DNSResponseBuilder:
         # HEADER|QUESTION|ANSWER|AUTHORITY|ADDITIONAL(dont have)
 
     def build_response(self, aa, rcode, zone_name, include_soa=False, ip=None, soa_data=None):
+        print("[DNS] building response...")
         self.parse_request()
 
         # working with soa for NXDOMAIN AND NODATA
