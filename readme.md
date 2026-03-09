@@ -4,10 +4,11 @@
 
 [![Trello](https://shields.io/badge/Project_Track-Trello-purple?logo=Trello&style=flat)](https://trello.com/b/KPWm4q41/network-final-assignment)
 
-### This Project consists of 3 Parts:
+### This Project consists of 3 Parts and 1 Additional One:
 * Custom FTP Server
 * DHCP Server
 * DNS Server
+* Custom RUDP Protocol
 ---
 ## Architecture & Components:
 
@@ -34,6 +35,9 @@
 * `ftp_client.py` - unified client, made to work with DHCP, DNS and FTP Servers
 
 ---
+
+### RUDP:
+* the RUDP protocol is integrated into the FTP server and the client, based on the protocol implemented in Assignment 3
 
 ### Dissectors:
 * since we made a custom FTP over JSON and not the RFC one, we made a Lua dissector for Wireshark, can be found in Dissectors/Custom FTP
