@@ -30,6 +30,8 @@ class DNSHeader:
 class ZoneDatabase:
     def __init__(self, file_path="dns.json"):
         self.file_path = file_path
+        self.database = {}
+        self.zones = set()
         self._load()
 
         #self.name = None
@@ -41,6 +43,9 @@ class ZoneDatabase:
         try:
             with open(self.file_path,"r") as f:
                 self.database = json.load(f)
+                for domain in self.database.keys():
+                    zone = self.extract_zone(domain)
+                    self.zones.add(zone)
         except FileNotFoundError:
             self.database = {}
 
