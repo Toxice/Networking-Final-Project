@@ -2,6 +2,7 @@ import socket
 import json
 import struct
 import sys
+from RUDP.rudp_service import RUDPService
 
 
 class FTPService:
@@ -46,25 +47,13 @@ class FTPService:
         print(f"Saved: {path}")
 
     def _receive_rudp(self, port, path):
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as ds:
-            ds.bind((self.client_ip, 0))
-            ds.sendto(json.dumps({"type": "ACK", "num": -1}).encode(), (self.server_ip, port))
+        server_data_addr = (self.server_ip, port)
+        # Create RUDP Client instance
+        client = RUDPService(self.client_ip, server_data_addr)
 
-            received = {}
-            total = 0
-            ds.settimeout(5)
-            try:
-                while True:
-                    data, addr = ds.recvfrom(self.BUFFER_SIZE)
-                    if data == b"DONE": break
-                    p_num, total = struct.unpack("!II", data[:8])
-                    if p_num not in received:
-                        received[p_num] = data[8:]
-                        sys.stdout.write(f"\rProgress: {len(received)}/{total}")
-                    ds.sendto(json.dumps({"type": "ACK", "num": p_num}).encode(), addr)
-            except socket.timeout:
-                pass
+        # Receive the raw bytes
+        file_data = client.receive_file()
 
-            with open(path, 'wb') as f:
-                for i in sorted(received.keys()): f.write(received[i])
-        print(f"\nSaved: {path}")
+        with open(path, 'wb') as f:
+            f.write(file_data)
+        print(f"\nSaved via RUDP: {path}")

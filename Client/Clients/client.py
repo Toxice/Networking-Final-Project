@@ -1,6 +1,9 @@
 import sys
 import os
 
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(project_root)
+
 # This calculates the path to the 'Networking-Project' directory
 # by going up two levels from where client.py is located.
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
