@@ -35,7 +35,6 @@ class RUDPService:
                         received_chunks[seq] = chunk
                         sys.stdout.write(f"\rRUDP Progress: {len(received_chunks)}/{total}")
                         sys.stdout.flush()
-
                     # Send ACK for the received packet
                     self.sock.sendto(RUDPProtocol.create_ack(seq), addr)
                 except socket.timeout:

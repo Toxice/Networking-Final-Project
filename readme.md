@@ -31,14 +31,17 @@
 
 ---
 
+### RUDP Server:
+* based on the protocol assigned in Assignment 3
+* `rudp_protocol.py` - contains the protocol functionality
+* `rudp_server.py` - the RUDP Server, used for transferring data from the FTP Server to the Client
+* `rudp_client.py` - the RUDP Client, used for transferring data from the FTP Client to the Server
+
+---
 ### Client:
 * `ftp_client.py` - unified client, made to work with DHCP, DNS and FTP Servers
 
 ---
-
-### RUDP:
-* the RUDP protocol is integrated into the FTP server and the client, based on the protocol implemented in Assignment 3
-
 ### Dissectors:
 * since we made a custom FTP over JSON and not the RFC one, we made a Lua dissector for Wireshark, can be found in Dissectors/Custom FTP
 * the protocol is named FOJP (File transfer Over JSON Protocol) `fojp.lua`
