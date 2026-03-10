@@ -5,7 +5,8 @@ import json
 class RUDPProtocol:
     HEADER_FORMAT = "!II"  # Sequence Number (4 bytes), Total Packets (4 bytes)
     HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
-    MAX_PACKET_SIZE = 30000
+    # MAX_PACKET_SIZE = 30000
+    MAX_PACKET_SIZE = 1450
 
     @staticmethod
     def create_packet(seq_num, total_packets, data):

@@ -6,7 +6,8 @@ from .rudp_protocol import RUDPProtocol
 
 
 class RUDPServer:
-    def __init__(self, host, port, window_size=5, timeout=1.0):
+    # def __init__(self, host, port, window_size=5, timeout=1.0):
+    def __init__(self, host, port, window_size=10, timeout=1.0):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((host, port))
         self.window_size = window_size
