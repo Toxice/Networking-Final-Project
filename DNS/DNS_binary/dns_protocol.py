@@ -1,7 +1,6 @@
 import json
 import struct
 import socket
-from dns_server import *
 
 #header
 class DNSHeader:
@@ -30,6 +29,8 @@ class DNSHeader:
 class ZoneDatabase:
     def __init__(self, file_path="dns.json"):
         self.file_path = file_path
+        self.database = {}
+        self.zones = []
         self._load()
 
         #self.name = None
@@ -41,8 +42,10 @@ class ZoneDatabase:
         try:
             with open(self.file_path,"r") as f:
                 self.database = json.load(f)
+                self.zones = list(set(self.extract_zone(k) for k in self.database.keys()))
         except FileNotFoundError:
             self.database = {}
+            self.zones = []
 
     #writing python dict into the database.json
     def _save(self):
