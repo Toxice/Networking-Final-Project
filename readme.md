@@ -14,17 +14,20 @@
 
 
 ### DNS Server:
+* works over port 8053, meant to not interfere with port 53
 * `dns_protocol.py` - struct packing & unpacking and DNS methods
 * `dns_server.py` - actual DNS server
 ---
 
 ### DHCP Server:
++ works over ports 6767 and 6868 instead of 67 and 68
 * `dhcp_model.py` - python dataclass, used as  an abstraction layer from the bits representation to a class
-* `dhcp_protocol.py` - used for struct packing & unpackin and all DHCP DORA process methods
+* `dhcp_protocol.py` - used for struct packing & unpacking and all DHCP DORA process methods
 * `dhcp_server.py` - the actual DHCP server
 ---
 
 ### FTP Server:
+* works over port 2121 for Control, and a random port is selected for RUDP/TCP Data Channel
 * `ftp_server.py` - FTP Server class
 
 #### since FTP is basically a text based application protocol, there is no need to a fancy 3 class based architecture, one class is enough
@@ -45,6 +48,18 @@
 ### Dissectors:
 * since we made a custom FTP over JSON and not the RFC one, we made a Lua dissector for Wireshark, can be found in Dissectors/Custom FTP
 * the protocol is named FOJP (File transfer Over JSON Protocol) `fojp.lua`
+* another dissector is meant for RUDP, it's named CRUDP (Custom RUDP), can be found in Dissectors/Custom RUDP
+* `crudp.lua`
+---
+
+### Setup:
+1. set the Lua dissectors inside Wireshark (in the plugins folder)
+2. start each server:
+* `python dhcp_server.py`
+* `python dns_server.py`
+* `python ftp_server.py`
+3. run the client:
+* `python client.py`
 
 ### Bibliography:
 [![Google Docs](https://img.shields.io/badge/DHCP-RFC2121-4285F4?style=for-the-badge&logo=googledocs&logoColor=white)](https://www.ietf.org/rfc/rfc2131.txt)
