@@ -1,11 +1,28 @@
 import struct
 import json
 
+"""
+Custom RUDP Header
+We made a very simple RUDP protocol, based on the Go-Back-N mechanism
+
+
+1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                       Sequence Number (4)                     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                       Total Packets (4)                       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+|                        Payload Data (Variable)                |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+"""
+
 
 class RUDPProtocol:
     HEADER_FORMAT = "!II"  # Sequence Number (4 bytes), Total Packets (4 bytes)
     HEADER_SIZE = struct.calcsize(HEADER_FORMAT)
-    # MAX_PACKET_SIZE = 30000
     MAX_PACKET_SIZE = 1450
 
     @staticmethod
