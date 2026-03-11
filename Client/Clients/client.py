@@ -20,7 +20,7 @@ from DHCP.bitwise_dhcp.dhcp_service import DHCPService
 from DNS.DNS_binary.dns_service import DNSService
 from FTP.ftp_service import FTPService
 
-HOSTNAME = "ftp.example.com"
+HOSTNAME = "ftp.project_gay.com"
 
 LOCAL_IP = "127.0.0.1"
 

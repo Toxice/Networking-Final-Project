@@ -46,10 +46,8 @@
 
 ---
 ### Dissectors:
-* since we made a custom FTP over JSON and not the RFC one, we made a Lua dissector for Wireshark, can be found in Dissectors/Custom FTP
-* the protocol is named FOJP (File transfer Over JSON Protocol) `fojp.lua`
-* another dissector is meant for RUDP, it's named CRUDP (Custom RUDP), can be found in Dissectors/Custom RUDP
-* `crudp.lua`
+* `crudp.lua` - Dissector for the Custom RUDP Protocol
+* `fojp.lua` - Dissector for the Custom FTP Protocol (File Over JSON Protocol)
 ---
 
 ### Setup:

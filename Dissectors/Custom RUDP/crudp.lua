@@ -1,60 +1,73 @@
--- CRUDP Protocol Dissector (Optimized)
+-- CRUDP Protocol Dissector (Binary Version)
 local crudp_proto = Proto("CRUDP", "Custom Reliable UDP")
 
--- Header Fields Definitions
-local f_seq_num = ProtoField.uint32("crudp.seq_num", "Packet Number", base.DEC)
+-- Header Fields
+local f_seq_num = ProtoField.uint32("crudp.seq_num", "Sequence Number", base.DEC)
 local f_total_p = ProtoField.uint32("crudp.total_packets", "Total Packets", base.DEC)
-local f_ack_num  = ProtoField.int32("crudp.ack_num", "ACK Number", base.DEC)
-local f_pkt_size = ProtoField.uint32("crudp.size", "Packet Size", base.DEC)
-local f_win_size = ProtoField.uint32("crudp.window", "Window Size", base.DEC)
+local f_flags   = ProtoField.uint8("crudp.flags", "Flags", base.HEX)
 
-crudp_proto.fields = { f_seq_num, f_total_p, f_ack_num, f_pkt_size, f_win_size }
+-- Bitmask Flags
+local f_flag_syn = ProtoField.bool("crudp.flags.syn", "SYN (Connection Init)", 8, nil, 0x04)
+local f_flag_ack = ProtoField.bool("crudp.flags.ack", "ACK (Acknowledgment)", 8, nil, 0x02)
+local f_flag_fin = ProtoField.bool("crudp.flags.fin", "FIN (Teardown)", 8, nil, 0x01)
+
+-- Padding and Meta
+local f_reserved = ProtoField.bytes("crudp.reserved", "Padding (3 bytes)", base.NONE)
+local f_pkt_size = ProtoField.uint32("crudp.size", "Total Frame Size", base.DEC)
+
+crudp_proto.fields = { f_seq_num, f_total_p, f_flags, f_flag_syn, f_flag_ack, f_flag_fin, f_reserved, f_pkt_size }
 
 function crudp_proto.dissector(buffer, pinfo, tree)
     local length = buffer:len()
-    if length == 0 then return end
+    if length < 12 then return end
 
     pinfo.cols.protocol = "CRUDP"
-    
-    -- 1. Handle "DONE" Signal
-    if length == 4 and buffer(0, 4):raw() == "DONE" then
-        pinfo.cols.info = "FINALIZE"
-        tree:add(crudp_proto, buffer(0, 4), "CRUDP Protocol: FINALIZE")
-        return
+
+    local seq_num = buffer(0, 4):uint()
+    local total_p = buffer(4, 4):uint()
+    local flags   = buffer(8, 1):uint()
+
+    -- Determine Packet Type
+    local p_type = "DATA"
+    if bit.band(flags, 0x04) ~= 0 then p_type = "SYN"
+    elseif bit.band(flags, 0x02) ~= 0 then p_type = "ACK"
+    elseif bit.band(flags, 0x01) ~= 0 then p_type = "FIN"
     end
 
-    -- 2. Handle ACKs (JSON)
-    local first_byte = buffer(0, 1):uint()
-    if first_byte == 123 then -- ASCII '{'
-        local json_str = buffer(0, length):string()
-        local ack_num = json_str:match("\"num\"%s*:%s*(-?%d+)")
-
-        if ack_num then
-            pinfo.cols.info = string.format("ACK | Win: 10 | Size: %d | Num: %s", length, ack_num)
-            -- Use the whole buffer for ACKs since the whole thing is the JSON message
-            local subtree = tree:add(crudp_proto, buffer(), "CRUDP Protocol Metrics (ACK)")
-            subtree:add(f_ack_num, tonumber(ack_num))
-            subtree:add(f_win_size, 10):set_generated()
-            subtree:add(f_pkt_size, length):set_generated()
-        end
-        return
+    -- Update Info Column
+    if p_type == "DATA" then
+        pinfo.cols.info = string.format("DATA | Seq: %d | Total: %d", seq_num, total_p)
+    else
+        pinfo.cols.info = string.format("%s | Num: %d", p_type, seq_num)
     end
 
-    -- 3. Handle Data Packets
-    if length >= 8 then
-        local seq_num = buffer(0, 4):uint()
-        local total_packets = buffer(4, 4):uint()
+    -- Main Header Tree
+    local subtree = tree:add(crudp_proto, buffer(0, 12), "CRUDP Header (" .. p_type .. ")")
+    subtree:add(f_seq_num, buffer(0, 4))
+    subtree:add(f_total_p, buffer(4, 4))
 
-        pinfo.cols.info = string.format("DATA | Win: 10 | Size: %d | Num: %d", length, seq_num)
+    -- Flags Subtree
+    local flag_tree = subtree:add(f_flags, buffer(8, 1))
 
-        -- PERFORMANCE FIX: Only add the first 8 bytes (Header) to the tree
-        -- This prevents the "gibberish" payload from being highlighted/associated with your tree
-        local subtree = tree:add(crudp_proto, buffer(0, 8), "CRUDP Header (Payload Hidden)")
+    -- Logical Data Display
+    if flags == 0 then
+        flag_tree:add(buffer(8,1), ".... ...0 = Data: True"):set_generated()
+    else
+        flag_tree:add(buffer(8,1), ".... ...0 = Data: False"):set_generated()
+    end
 
-        subtree:add(f_seq_num, buffer(0, 4))
-        subtree:add(f_total_p, buffer(4, 4)) -- Added this since it's in your Python header!
-        subtree:add(f_win_size, 10):set_generated()
-        subtree:add(f_pkt_size, length):set_generated()
+    flag_tree:add(f_flag_syn, buffer(8, 1))
+    flag_tree:add(f_flag_ack, buffer(8, 1))
+    flag_tree:add(f_flag_fin, buffer(8, 1))
+
+    -- Padding and Size
+    subtree:add(f_reserved, buffer(9, 3))
+    subtree:add(f_pkt_size, length):set_generated()
+
+    -- Payload Section
+    if length > 12 then
+        local payload_len = length - 12
+        tree:add(buffer(12, payload_len), "Payload Data (" .. payload_len .. " bytes)")
     end
 end
 
