@@ -20,14 +20,14 @@
 ---
 
 ### DHCP Server:
-+ works over ports 6767 and 6868 instead of 67 and 68
++ works over ports 6767 and 6868, meant to not interfere with ports 67 and 68
 * `dhcp_model.py` - python dataclass, used as  an abstraction layer from the bits representation to a class
 * `dhcp_protocol.py` - used for struct packing & unpacking and all DHCP DORA process methods
 * `dhcp_server.py` - the actual DHCP server
 ---
 
 ### FTP Server:
-* works over port 2121 for Control, and a random port is selected for RUDP/TCP Data Channel
+* works over port 2121 for Control (to not interfere with port 21), and a random port is selected for RUDP/TCP Data Channel
 * `ftp_server.py` - FTP Server class
 
 #### since FTP is basically a text based application protocol, there is no need to a fancy 3 class based architecture, one class is enough
