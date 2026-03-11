@@ -42,7 +42,7 @@
 
 ---
 ### Client:
-* `ftp_client.py` - unified client, made to work with DHCP, DNS and FTP Servers
+* `client.py` - unified client, made to work with DHCP, DNS and FTP Servers
 
 ---
 ### Dissectors:
