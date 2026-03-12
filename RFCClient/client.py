@@ -1,22 +1,22 @@
 import sys
 import os
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(project_root)
 
 # This calculates the path to the 'Networking-Project' directory
 # by going up two levels from where client.py is located.
-root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 if root_path not in sys.path:
     sys.path.insert(0, root_path)
 
 # ALSO add the specific folder where the DHCP logic lives
-sys.path.insert(0, os.path.join(root_path, 'DHCP', 'bitwise_dhcp'))
-sys.path.insert(0, os.path.join(root_path, 'DNS', 'dns_binary'))
+sys.path.insert(0, os.path.join(root_path, 'dhcp_bitwise'))
+sys.path.insert(0, os.path.join(root_path, 'dns_binary'))
 sys.path.insert(0, os.path.join(root_path, 'FTP'))
 
-from DHCP.bitwise_dhcp.dhcp_service import DHCPService
+from dhcp_bitwise.dhcp_service import DHCPService
 from DNS.DNS_binary.dns_service import DNSService
 from FTP.ftp_service import FTPService
 

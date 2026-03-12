@@ -41,7 +41,7 @@ class ZoneDatabase:
 
 def resolve_request(database: ZoneDatabase, request_dict):
     """
-    Core logic for processing the JSON dictionary.
+    Core logic for processing the JSONClient dictionary.
     """
     # Case 1: Update/Add Record (contains both url and ip)
     if "url" in request_dict and "ip" in request_dict:
@@ -106,7 +106,7 @@ class json_dns_server:
             # This is where the actual lookup in dns.json happens.
             resolved_dict = resolve_request(self.zone_database, data)
 
-            # 5. THE PACKAGER: Turn our answer back into a JSON string.
+            # 5. THE PACKAGER: Turn our answer back into a JSONClient string.
             # Example: {"ip": "142.250.75.110"} -> '{"ip": "142.250.75.110"}'
             final_json = json.dumps(resolved_dict)
 
@@ -117,9 +117,9 @@ class json_dns_server:
             return final_json.encode("utf8")
 
         except json.JSONDecodeError:
-            # If someone sends us gibberish that isn't JSON.
-            print("[DNS] ERROR: Someone sent us something that isn't valid JSON!")
-            return json.dumps({"error": "Invalid JSON"}).encode("utf8")
+            # If someone sends us gibberish that isn't JSONClient.
+            print("[DNS] ERROR: Someone sent us something that isn't valid JSONClient!")
+            return json.dumps({"error": "Invalid JSONClient"}).encode("utf8")
 
         except Exception as e:
             # The "Catch-All" so your server doesn't crash if something else breaks.

@@ -1,8 +1,8 @@
 import socket
 import uuid
 import random
-from DHCP.bitwise_dhcp import dhcp_protocol
-from DHCP.bitwise_dhcp.dhcp_model import SERVER_PORT, CLIENT_PORT, DHCPState
+from dhcp_bitwise import dhcp_protocol
+from dhcp_bitwise.dhcp_model import SERVER_PORT, CLIENT_PORT, DHCPState
 
 
 class DHCPService:
