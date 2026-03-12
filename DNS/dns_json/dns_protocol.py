@@ -1,102 +1,127 @@
-from dns_server import *
 import json
+import socket
 
 
-#databasex
+# Database class to handle the dns.json file
 class ZoneDatabase:
-    #new def init:
     def __init__(self, file_path="dns.json"):
         self.file_path = file_path
+        self.database = {}
         self._load()
-
-        # self.name = None
-        # self.soa = None
-
-        # opeling a file with our database
 
     def _load(self):
         try:
             with open(self.file_path, "r") as f:
                 self.database = json.load(f)
         except FileNotFoundError:
+            print(f"[DNS System] Warning: {self.file_path} not found. Starting with empty database.")
             self.database = {}
 
-    # writing python dict into the database.json
     def _save(self):
         with open(self.file_path, "w") as f:
             json.dump(self.database, f, indent=4)
 
-    # adding new data into database
     def add_record(self, url: str, ip: str):
         normalized = url.lower().rstrip(".").strip()
-        # ipv4
         try:
-            socket.inet_aton(ip)  # converting string into bytes
-        except OSError:  # catching errors
+            socket.inet_aton(ip)
+        except OSError:
             raise ValueError("invalid ipv4 address")
 
         self.database[normalized] = ip
         self._save()
 
-    #checking whether name is in records:
     def is_in_zone(self, name):
-        normalized = name.lower().rstrip(".")
+        normalized = name.lower().rstrip(".").strip()
         return normalized in self.database
 
     def lookup(self, domain_name):
-        return self.database.get(domain_name.lower().rstrip("."))
+        return self.database.get(domain_name.lower().rstrip(".").strip())
 
 
 def resolve_request(database: ZoneDatabase, request_dict):
-    #suka lets work on second url request blyatb
-    if "url" in request_dict and "ip" in request_dict: #for treating stuff like { "url" : ""}
+    """
+    Core logic for processing the JSON dictionary.
+    """
+    # Case 1: Update/Add Record (contains both url and ip)
+    if "url" in request_dict and "ip" in request_dict:
         query_url = request_dict.get("url")
         query_ip = request_dict.get("ip")
-        if not isinstance(query_url, str) or not isinstance(query_ip, str): #checking whether query_url is str
+
+        if not isinstance(query_url, str) or not isinstance(query_ip, str):
             return {"error": "Invalid field types"}
         if not query_ip or not query_url:
-            print("Wrong request format")
             return {"error": "Invalid request format"}
+
         database.add_record(query_url, query_ip)
-        ip = database.lookup(query_url)
-        return {"ip": ip}
+        return {"ip": database.lookup(query_url)}
+
+    # Case 2: Standard Lookup (contains only url)
     elif "url" in request_dict:
         query_url = request_dict.get("url")
         if not isinstance(query_url, str):
             return {"error": "Invalid url type"}
         if not query_url:
             return {"ip": None}
+
         normalized_url = query_url.lower().rstrip(".").strip()
-        if database.is_in_zone(normalized_url):
-            ip = database.lookup(normalized_url)
-            if ip:
-                return {"ip": ip}
-            else:
-                return {"ip": None}
-        else:
-            return {"ip": None}
+        ip = database.lookup(normalized_url)
+        return {"ip": ip}
+
     else:
-        print("ERROR")
         return {"error": "Invalid request format"}
 
+
 class json_dns_server:
+    """
+    The Server Wrapper handles the 'On the Wire' actions and provides 
+    the commenting mechanism for visibility.
+    """
+
     def __init__(self, zone_database):
         self.zone_database = zone_database
-        self.bytes = b''
 
     def handle(self, raw_data):
-        #checking correct size of data
-        if len(raw_data) == 1024:
-            return json.dumps({"error": "Payload too large"}).encode("utf8")
-        if len(raw_data) == 0:
+        # 1. THE GATEKEEPER: Don't process empty packets or giant "bomb" packets.
+        if not raw_data:
             return b''
-        try:
-            decoded_data = raw_data.decode("utf8")  # decoding
-            data = json.loads(decoded_data)  # bytes -> string
-            resolved_data = resolve_request(self.zone_database, data)
-            final_data = json.dumps(resolved_data).encode("utf8")  # string -> bytes + encoding
-            return final_data
-        except Exception as e:
-            print("ERROR:", e)
-            return json.dumps({"error": "Server error"}).encode("utf8")
 
+        if len(raw_data) > 1024:
+            print("[DNS] ERROR: Packet too large! Dropping it.")
+            return json.dumps({"error": "Payload too large"}).encode("utf8")
+
+        try:
+            # 2. THE DECODER: Convert the "alien" bytes from the wire into a Python string.
+            # Example: b'{"url": "google.com"}' -> '{"url": "google.com"}'
+            decoded_string = raw_data.decode("utf8")
+
+            # 3. THE PARSER: Turn the string into a Python Dictionary so we can read it.
+            # Example: '{"url": "google.com"}' -> {"url": "google.com"}
+            data = json.loads(decoded_string)
+
+            # This is your 'commenting mechanism'—visibility into what just arrived.
+            print(f"\n[DNS RECEIVE] We got a request for: {decoded_string}")
+
+            # 4. THE BRAIN: Pass the dictionary to your 'resolve_request' function.
+            # This is where the actual lookup in dns.json happens.
+            resolved_dict = resolve_request(self.zone_database, data)
+
+            # 5. THE PACKAGER: Turn our answer back into a JSON string.
+            # Example: {"ip": "142.250.75.110"} -> '{"ip": "142.250.75.110"}'
+            final_json = json.dumps(resolved_dict)
+
+            # Visibility into what we are sending back.
+            print(f"[DNS SEND] We are replying with: {final_json}")
+
+            # 6. THE EXPORTER: Convert the string back into bytes to send over the network.
+            return final_json.encode("utf8")
+
+        except json.JSONDecodeError:
+            # If someone sends us gibberish that isn't JSON.
+            print("[DNS] ERROR: Someone sent us something that isn't valid JSON!")
+            return json.dumps({"error": "Invalid JSON"}).encode("utf8")
+
+        except Exception as e:
+            # The "Catch-All" so your server doesn't crash if something else breaks.
+            print(f"[DNS] CRITICAL ERROR: {e}")
+            return json.dumps({"error": "Server error"}).encode("utf8")

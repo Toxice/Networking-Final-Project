@@ -1,109 +1,91 @@
 import json
 import socket
-import json_config
-
-Broadcast_In = "255.255.255.255"
-Broadcast_Out = "0.0.0.0"
-Port_In = 6767
-Port_Out = 6868
 
 
 class DHCPServer:
-    def __init__(self, ip_mask: str, allocation: int):
-        """
-        DHCP Constructor
-        :param ip_mask: 3 part string of ip, 24bit (like "192.168.10")
-        :param allocation: number of IPs to allocate (2–256, defaults to 10 if out of range)
-        """
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        self.alloc = allocation if (2 <= allocation <= 10) else 10
+    def __init__(self, ip_mask="10.100.102", allocation=10, dns=None):
         self.ip_mask = ip_mask
-        self.ip_pool = self.__generate_pool()
-        self.transaction_id = None
-        self.dns_server = json_config.DNS_IP
+        self.allocation = max(2, min(allocation, 254))  # Clamp between 2 and 254
+        self.dns_server = dns or self._load_dns_from_file()
+        self.port = 6767
 
-    def __generate_pool(self):
-        """
-        generate IP Pool
-        :return: IP array
-        """
-        return [f"{self.ip_mask}.{i}" for i in range(1, self.alloc + 1)]
+        # IP Pool Management
+        # We'll start allocating from .10 up to .10 + allocation
+        self.start_ip = 10
+        self.pool = {}  # Dictionary to track {transaction_id: assigned_ip}
 
-    def serve(self):
-        """
-        set up the socket
-        """
-        self.server.bind((Broadcast_Out, Port_In))
-        print(f"[DHCP] Listening on Port {Port_In}...")
-        while True:
-            data, address = self.server.recvfrom(1024)
-            print(f"[DHCP] Got a DHCP Request")
+    def _load_dns_from_file(self):
+        try:
+            with open("dhcp.json", "r") as f:
+                data = json.load(f)
+                return data.get("dns_server", "10.100.102.5")
+        except (FileNotFoundError, json.JSONDecodeError):
+            return "10.100.102.5"
 
-            request = json.loads(data.decode(encoding="utf-8"))
+    def _get_next_available_ip(self, xid):
+        """
+        Simple pool logic: find the next free index in our allocation range.
+        """
+        # If this transaction ID already has an assignment, return it
+        if xid in self.pool:
+            return self.pool[xid]
 
-            # Updated to match ftp_client.py keys
-            match request.get("message_type"):
-                case "DISCOVER":
-                    self.handle_discover(request.get("transaction_id"))
-                case "REQUEST":
-                    self.handle_request(request.get("transaction_id"), request.get("requested_ip"))
+        # Otherwise, find a new one
+        for i in range(self.start_ip, self.start_ip + self.allocation):
+            potential_ip = f"{self.ip_mask}.{i}"
+            if potential_ip not in self.pool.values():
+                self.pool[xid] = potential_ip
+                return potential_ip
 
-    def dhcp_offer(self, transaction_id: int):
-        """
-        Creates the OFFER message (does NOT remove the IP from the pool yet).
-        :param transaction_id: Transaction ID
-        :return: OFFER message as bytes
-        """
-        # Updated to match ftp_client.py keys
-        payload = {
-            "message_type": "OFFER",
-            "transaction_id": transaction_id,
-            "ip_address": self.ip_pool[0],
-            "dns_server": self.dns_server
-        }
-        return json.dumps(payload).encode(encoding="utf-8")
+        return None  # Pool exhausted
 
-    def dhcp_ack(self, transaction_id: int, ip_address):
-        """
-        Creates the ACK message and removes the IP from the pool.
-        :param ip_address: the IP address was allocated by the server earlier
-        :param transaction_id: Transaction ID
-        :return: ACK message as bytes
-        """
-        if ip_address == self.ip_pool[0]:
-            # Updated to match ftp client.py keys
-            payload = {
-                "message_type": "ACK",
-                "transaction_id": transaction_id,
-                "ip_address": self.ip_pool.pop(0),
+    def handle(self, raw_data):
+        if not raw_data:
+            return b''
+        try:
+            data = json.loads(raw_data.decode("utf8"))
+            msg_type = data.get("message_type")
+            xid = data.get("transaction_id")
+
+            print(f"[DHCP RECEIVE] {msg_type} | ID: {xid}")
+
+            # Allocate or retrieve IP from the pool
+            assigned_ip = self._get_next_available_ip(xid)
+            if not assigned_ip:
+                print(f"[DHCP ERROR] Pool exhausted! Cannot serve ID: {xid}")
+                return json.dumps({"error": "No IPs available"}).encode("utf8")
+
+            out_type = "OFFER" if msg_type == "DISCOVER" else "ACK"
+
+            response = {
+                "message_type": out_type,
+                "transaction_id": xid,
+                "ip_address": assigned_ip,
                 "dns_server": self.dns_server
             }
-            return json.dumps(payload).encode(encoding="utf-8")
-        else:
-            # Fixed raw dict return to JSON string
-            payload = {
-                "message_type": "NACK",
-                "transaction_id": transaction_id
-            }
-            return json.dumps(payload).encode(encoding="utf-8")
 
-    def handle_discover(self, transaction_id: int):
-        if not self.ip_pool:
-            print("[DHCP] No IPs available, ignoring DISCOVER.")
-            return
+            final_json = json.dumps(response)
+            print(f"[DHCP SEND] {out_type} | Assigned: {assigned_ip} | DNS: {self.dns_server}")
+            return final_json.encode("utf8")
 
-        response = self.dhcp_offer(transaction_id)
-        print(f"[DHCP] received DISCOVER on id: {transaction_id}")
+        except Exception as e:
+            print(f"[DHCP ERROR] {e}")
+            return b''
 
-        self.server.sendto(response, (Broadcast_In, Port_Out))
+    def serve(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            try:
+                sock.bind(("0.0.0.0", self.port))
+                print(f"\n[DHCP] DHCP Server Live | Port: {self.port}")
+                #print(f"[DHCP] Pool: {self.ip_mask}.{self.start_ip} to .{self.start_ip + self.allocation - 1}")
+                print(f"[DHCP] Pool: {self.ip_mask}.{self.start_ip} to {self.ip_mask}.{str(self.allocation - 1)}")
+                print("-" * 50)
+            except OSError as e:
+                print(f"[DHCP] Bind Error: {e}")
+                return
 
-    def handle_request(self, transaction_id: int, ip_address):
-        if not self.ip_pool:
-            print("[DHCP] No IPs available, ignoring REQUEST.")
-            return
-
-        response = self.dhcp_ack(transaction_id, ip_address)
-
-        print(f"[DHCP] received REQUEST on id {transaction_id}")
-        self.server.sendto(response, (Broadcast_In, Port_Out))
+            while True:
+                raw_data, addr = sock.recvfrom(1024)
+                response = self.handle(raw_data)
+                if response:
+                    sock.sendto(response, addr)

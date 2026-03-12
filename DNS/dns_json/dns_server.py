@@ -1,10 +1,8 @@
 import socket
 import random
 import time
-
-
 from dns_protocol import *
-# a class for working with raw socket
+
 class UdpTransport:
     #constructor
     def __init__(self, host, port, timeout = 2, buffer_size = 1024, receive_loss_rate=0.0,
@@ -26,7 +24,7 @@ class UdpTransport:
         self.sock.bind((self.host, self.port))
         self.sock.settimeout(self.timeout)
         self.running = True
-        print(f"UDP server running on {self.host}:{self.port}")
+        print(f"[DNS] server running on {self.host}:{self.port}")
 
     def receive(self):
         try:
@@ -79,8 +77,8 @@ def run_dns_server(host: str, port: int):
         transport.send(response, addr)
 
 def serve():
-    #127.0.0.1
-    run_dns_server("127.0.0.1", 9000)
+    # run_dns_server("127.0.0.1", 9000)
+      run_dns_server("127.0.0.1", 8053)
 
 if __name__ == "__main__":
     serve()
