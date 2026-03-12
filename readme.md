@@ -13,17 +13,30 @@
 ## Architecture & Components:
 
 
-### DNS Server:
+### RFC DNS Server:
 * works over port 8053, meant to not interfere with port 53
 * `dns_protocol.py` - struct packing & unpacking and DNS methods
 * `dns_server.py` - actual DNS server
 ---
 
-### DHCP Server:
+### RFC DHCP Server:
 + works over ports 6767 and 6868, meant to not interfere with ports 67 and 68
 * `dhcp_model.py` - python dataclass, used as  an abstraction layer from the bits representation to a class
 * `dhcp_protocol.py` - used for struct packing & unpacking and all DHCP DORA process methods
 * `dhcp_server.py` - the actual DHCP server
+---
+
+### JSON DNS Server:
+* works over port 8053, meant to not interfere with port 53
+* `dns_protocol.py` - 
+* `dns_server.py` - 
+---
+
+### JSON DHCP Server:
++ works over ports 6767 and 6868, meant to not interfere with ports 67 and 68
+* `dhcp_model.py` -
+* `dhcp_protocol.py` - 
+* `dhcp_server.py` - 
 ---
 
 ### FTP Server:
@@ -41,7 +54,11 @@
 * `rudp_client.py` - the RUDP Client, used for transferring data from the FTP Client to the Server
 
 ---
-### Client:
+### RFC Client:
+* `client.py` - unified client, made to work with DHCP, DNS and FTP Servers
+---
+
+### JSON Client:
 * `client.py` - unified client, made to work with DHCP, DNS and FTP Servers
 
 ---

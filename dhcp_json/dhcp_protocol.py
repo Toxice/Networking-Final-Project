@@ -14,7 +14,8 @@ class DHCPServer:
         self.start_ip = 10
         self.pool = {}  # Dictionary to track {transaction_id: assigned_ip}
 
-    def _load_dns_from_file(self):
+    @staticmethod
+    def _load_dns_from_file():
         try:
             with open("dhcp.json", "r") as f:
                 data = json.load(f)
