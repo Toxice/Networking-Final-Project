@@ -12,6 +12,61 @@
 ---
 ## Architecture & Components:
 
+---
+### Project Tree:
+
+```
+Networking-Project
+├── JSONClient
+│   └── client.py
+├── RFCClient
+│   └── client.py
+├── dhcp_bitwise
+│   ├── dhcp.json
+│   ├── dhcp_client.py
+│   ├── dhcp_model.py
+│   ├── dhcp_protocol.py
+│   ├── dhcp_server.py
+│   ├── dhcp_service.py
+│   └── example_client.py
+├── dhcp_json
+│   ├── dhcp.json
+│   ├── dhcp_protocol.py
+│   ├── dhcp_server.py
+│   ├── dhcp_service.py
+│   └── json_config.py
+├── DNS
+│   ├── DNS_binary
+│   │   ├── dns.json
+│   │   ├── dns_protocol.py
+│   │   ├── dns_server.py
+│   │   └── dns_service.py
+│   └── dns_json
+│       ├── client.py
+│       ├── dns.json
+│       ├── dns_protocol.py
+│       ├── dns_server.py
+│       └── dns_service.py
+├── FTP
+│   ├── server_files/
+│   ├── __init__.py
+│   ├── ftp_server.py
+│   └── ftp_service.py
+├── RUDP
+│   ├── __init__.py
+│   ├── rudp_protocol.py
+│   ├── rudp_server.py
+│   └── rudp_service.py
+└── Dissectors
+    ├── Custom FTP
+    │   └── fojp.lua
+    ├── Custom RUDP
+    │   └── crudp.lua
+    ├── JSON DHCP
+    │   └── json_dhcp.lua
+    └── JSON_DNS
+        └── dns_json.lua                               
+```
 
 ### RFC DNS Server:
 * works over port 8053, meant to not interfere with port 53
