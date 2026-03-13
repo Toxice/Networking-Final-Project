@@ -102,6 +102,45 @@ Networking-Project
 
 ---
 
+### Flow (RFC)
+
+---
+
+```mermaid
+stateDiagram-v2
+    [*] --> DHCP_RFC: Discover IP
+    DHCP_RFC --> DNS_RFC: Request Domain Lookup
+    DNS_RFC --> FTP_Server: Connect to Storage
+    FTP_Server --> RUDP_Layer: Request Data Transfer
+    RUDP_Layer --> Client_Receive: Send Packets
+    Client_Receive --> [*]: Task Complete
+
+    note right of RUDP_Layer
+        RUDP handles reliability 
+        for the FTP server.
+    end note
+```
+
+### Flow (JSON)
+
+---
+
+```mermaid
+stateDiagram-v2
+    [*] --> DHCP_RFC: Discover IP
+    DHCP_RFC --> DNS_RFC: Request Domain Lookup
+    DNS_RFC --> FTP_Server: Connect to Storage
+    FTP_Server --> RUDP_Layer: Request Data Transfer
+    RUDP_Layer --> Client_Receive: Send Packets
+    Client_Receive --> [*]: Task Complete
+
+    note right of RUDP_Layer
+        RUDP handles reliability 
+        for the FTP server.
+    end note
+```
+---
+
 ### RUDP Server:
 * based on the protocol assigned in Assignment 3
 * `rudp_protocol.py` - contains the protocol functionality
@@ -130,6 +169,7 @@ Networking-Project
 * `python ftp_server.py`
 3. run the client:
 * `python client.py`
+---
 
 ### Bibliography:
 [![Google Docs](https://img.shields.io/badge/DHCP-RFC2121-4285F4?style=for-the-badge&logo=googledocs&logoColor=white)](https://www.ietf.org/rfc/rfc2131.txt)
