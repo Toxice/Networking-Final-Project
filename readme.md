@@ -74,7 +74,7 @@ Networking-Project
 * `dns_server.py` - actual DNS server
 ---
 
-### RFC DHCP Server:
+### DHCP DHCP Server:
 + works over ports 6767 and 6868, meant to not interfere with ports 67 and 68
 * `dhcp_model.py` - python dataclass, used as  an abstraction layer from the bits representation to a class
 * `dhcp_protocol.py` - used for struct packing & unpacking and all DHCP DORA process methods
