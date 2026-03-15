@@ -3,25 +3,27 @@
 ---
 
 ```mermaid
-flowchart TD
-    A[UDP Receive: raw_data] --> B{Length > 1024?}
-    B -- Yes --> C[Return Payload Too Large]
-    B -- No --> D[Decode UTF-8]
+sequenceDiagram
+    autonumber
+    participant Client as DNSService (dns_service.py)
+    participant Net as UdpTransport (dns_server.py)
+    participant Logic as json_dns_server (dns_protocol.py)
+    participant DB as ZoneDatabase (dns.json)
+
+    Note over Client: resolve(hostname)
+    Client->>Net: UDP Payload: {"url": "hostname"}
     
-    D --> E[JSON Parse: loads]
-    E -- Failure --> F[Return Invalid JSON]
-    E -- Success --> G{Fields Present?}
+    Note over Net: receive()<br/>Checks loss rate & delay
+    Net->>Logic: handle(raw_data)
     
-    G -- url AND ip --> H[Normalize URL\nlower/strip/rstrip]
-    H --> I[Validate IP Format]
-    I --> J[Update dns.json Database]
-    J --> K[Return Saved IP]
+    Note over Logic: JSON Parser/Decoder
+    Logic->>DB: lookup(normalized_url)
+    Note over DB: normalized = url.lower().strip()
+    DB-->>Logic: Returns IP (e.g., "66.254.114.41")
     
-    G -- url ONLY --> L[Normalize URL\nlower/strip/rstrip]
-    L --> M[Search ZoneDatabase]
-    M --> N[Return IP or None]
+    Note over Logic: resolve_request()<br/>Packages JSON response
+    Logic-->>Net: final_json.encode()
     
-    G -- Other --> O[Return Invalid Format]
-    
-    K & N & O & C & F --> P[JSON Encode & Send UDP]
+    Note over Net: send(response, addr)
+    Net->>Client: UDP Payload: {"ip": "66.254.114.41"}
 ```

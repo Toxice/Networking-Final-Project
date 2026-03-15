@@ -3,28 +3,23 @@
 ---
 
 ```mermaid
-flowchart TD
-    Start([UDP Socket Listen\nPort 6767]) --> Receive[Receive JSON Packet]
-    Receive --> Decode[JSON Load: message_type & transaction_id]
-    
-    Decode --> PoolCheck{xid in self.pool?}
-    
-    %% IP Pool Management logic
-    PoolCheck -- Yes --> GetExisting[Retrieve Existing Assigned IP]
-    PoolCheck -- No --> FindFree[Iterate start_ip to start_ip + allocation]
-    
-    FindFree --> Available{Free IP found?}
-    Available -- No --> Error[Return No IPs available]
-    Available -- Yes --> Assign[Add xid:IP to self.pool]
-    
-    %% Message Type Logic
-    Assign & GetExisting --> MsgType{message_type?}
-    
-    MsgType -- DISCOVER --> Offer[Prepare OFFER Response]
-    MsgType -- REQUEST --> Ack[Prepare ACK Response]
-    
-    %% Finalize
-    Offer & Ack --> Package[Include ip_address & dns_server]
-    Package --> Send[JSON Dump & Send to Client] --> Start
-    Error --> Send
+sequenceDiagram
+    autonumber
+    participant Client as DHCPService (dhcp_service.py)
+    participant Server as DHCPServer (dhcp_protocol.py)
+    Note over Client, Server: Communication via JSON over UDP (Port 6767)
+
+    Note over Client: init(): Generates random xid
+    Client->>Server: DISCOVER {"message_type": "DISCOVER", "transaction_id": xid}
+
+    Note over Server: handle(): Calls _get_next_available_ip(xid)
+    Server-->>Client: OFFER {"message_type": "OFFER", "transaction_id": xid, "ip_address": assigned_ip, "dns_server": dns}
+
+    Note over Client: Extracts offered_ip
+    Client->>Server: REQUEST {"message_type": "REQUEST", "transaction_id": xid, "requested_ip": offered_ip}
+
+    Note over Server: handle(): Confirms assignment in self.pool
+    Server-->>Client: ACK {"message_type": "ACK", "transaction_id": xid, "ip_address": assigned_ip, "dns_server": dns}
+
+    Note over Client: Returns (ip_address, dns_server)
 ```
